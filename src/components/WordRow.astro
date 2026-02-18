@@ -1,0 +1,73 @@
+---
+import { LEVEL_LABELS, LEVEL_COLORS } from '../lib/levels.js';
+
+interface Props {
+  id: number;
+  word: string;
+  definition: string;
+  partOfSpeech: string | null;
+  level: string | null;
+  mastery: number;
+  inQueue: boolean;
+}
+
+const { id, word, definition, partOfSpeech, level, mastery, inQueue } = Astro.props;
+
+const masteryColors = [
+  'bg-gray-100 text-gray-600',
+  'bg-yellow-100 text-yellow-700',
+  'bg-yellow-200 text-yellow-800',
+  'bg-orange-100 text-orange-700',
+  'bg-green-100 text-green-700',
+  'bg-green-200 text-green-800',
+];
+const masteryLabels = ['New', 'Level 1', 'Level 2', 'Level 3', 'Level 4', 'Mastered'];
+
+const levelClass = level ? (LEVEL_COLORS[level] ?? 'bg-gray-100 text-gray-600') : 'bg-gray-100 text-gray-600';
+const levelLabel = level ? (LEVEL_LABELS[level] ?? level) : '';
+const masteryClass = masteryColors[Math.min(mastery, 5)] ?? masteryColors[0];
+const masteryLabel = masteryLabels[Math.min(mastery, 5)] ?? 'New';
+const truncatedDef = definition.length > 80 ? definition.slice(0, 80) + '…' : definition;
+---
+
+<tr
+  class="border-b border-gray-100 hover:bg-indigo-50 cursor-pointer transition-colors word-row"
+  data-id={id}
+  data-word={word}
+  data-definition={definition}
+  data-pos={partOfSpeech}
+  data-level={level}
+  data-mastery={mastery}
+>
+  <td class="py-3 px-4 font-semibold text-gray-900">{word}</td>
+  <td class="py-3 px-4 text-gray-500 text-sm hidden md:table-cell italic">{partOfSpeech}</td>
+  <td class="py-3 px-4 text-gray-600 text-sm">{truncatedDef}</td>
+  <td class="py-3 px-4">
+    {level && (
+      <span class={`text-xs font-medium px-2 py-1 rounded-full whitespace-nowrap ${levelClass}`}>
+        {levelLabel}
+      </span>
+    )}
+  </td>
+  <td class="py-3 px-4">
+    <span class={`text-xs font-medium px-2 py-1 rounded-full ${masteryClass}`}>
+      {masteryLabel}
+    </span>
+  </td>
+  <td class="py-3 px-4" onclick="event.stopPropagation()">
+    <button
+      class="queue-btn text-sm font-medium px-3 py-1 rounded-lg transition-colors"
+      class:list={[
+        inQueue
+          ? 'bg-green-100 text-green-700 cursor-default'
+          : 'bg-indigo-100 hover:bg-indigo-200 text-indigo-700',
+      ]}
+      data-word-id={id}
+      data-in-queue={inQueue ? 'true' : 'false'}
+      disabled={inQueue}
+      title={inQueue ? 'Already in today\'s queue' : 'Add to today\'s study queue'}
+    >
+      {inQueue ? '✓ Queued' : '+ Queue'}
+    </button>
+  </td>
+</tr>

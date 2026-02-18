@@ -1,0 +1,189 @@
+---
+import { seedIfEmpty } from '../lib/seed.js';
+import { getUserStats, countDueWords, getMasteryBreakdown, countUnlearnedWords } from '../lib/db.js';
+import StatsBar from '../components/StatsBar.astro';
+
+seedIfEmpty();
+
+const stats = getUserStats();
+const dueCount = countDueWords();
+const mastery = getMasteryBreakdown();
+const unlearnedCount = countUnlearnedWords();
+const hour = new Date().getHours();
+const greeting = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VocabUp — Dashboard</title>
+  </head>
+  <body class="bg-gray-50 min-h-screen font-sans">
+    <nav class="bg-white border-b border-gray-200 px-6 py-4">
+      <div class="max-w-4xl mx-auto flex items-center justify-between">
+        <a href="/" class="text-xl font-bold text-indigo-600 tracking-tight">VocabUp</a>
+        <div class="flex gap-6 text-sm font-medium text-gray-600">
+          <a href="/" class="text-indigo-600">Dashboard</a>
+          <a href="/study" class="hover:text-indigo-600 transition-colors">Study</a>
+          <a href="/word-of-the-day" class="hover:text-indigo-600 transition-colors">Word of the Day</a>
+          <a href="/words" class="hover:text-indigo-600 transition-colors">Browse</a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Toast -->
+    <div id="toast" class="hidden fixed bottom-6 right-6 bg-indigo-600 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-medium z-50">
+      Words added! Ready to study.
+    </div>
+
+    <main class="max-w-4xl mx-auto px-6 py-10">
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Good {greeting}!</h1>
+        <p class="text-gray-500 mt-1">Keep building your vocabulary, one word at a time.</p>
+      </div>
+
+      <div class="mb-8">
+        <StatsBar
+          streak={stats.current_streak}
+          longestStreak={stats.longest_streak}
+          dueCount={dueCount}
+          newCount={mastery.new_count}
+          learningCount={mastery.learning_count}
+          masteredCount={mastery.mastered_count}
+        />
+      </div>
+
+      <!-- Primary CTA -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center mb-6">
+        {dueCount > 0 ? (
+          <>
+            <p class="text-gray-600 mb-2">
+              You have <strong class="text-indigo-600">{dueCount} word{dueCount !== 1 ? 's' : ''}</strong> waiting for review.
+            </p>
+            <a
+              href="/study"
+              class="inline-block mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-8 py-3 rounded-xl transition-colors text-lg"
+            >
+              Start Study Session →
+            </a>
+          </>
+        ) : (
+          <>
+            <div class="text-5xl mb-4">✅</div>
+            <p class="text-xl font-semibold text-gray-800 mb-2">All caught up!</p>
+            <p class="text-gray-500">No words due right now. Add new words below or check back tomorrow.</p>
+          </>
+        )}
+      </div>
+
+      <!-- Learn new words panel -->
+      {unlearnedCount > 0 && (
+        <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-6 mb-6">
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+              <h2 class="text-lg font-semibold text-indigo-800">Add new words to study</h2>
+              <p class="text-sm text-indigo-600 mt-1">
+                {unlearnedCount} word{unlearnedCount !== 1 ? 's' : ''} you haven't started yet.
+              </p>
+            </div>
+            <div class="flex gap-3 flex-wrap justify-center">
+              <button onclick="addWords(5)" class="bg-white hover:bg-indigo-100 border border-indigo-200 text-indigo-700 font-semibold px-4 py-2 rounded-xl text-sm transition-colors">
+                + 5 words
+              </button>
+              <button onclick="addWords(10)" class="bg-white hover:bg-indigo-100 border border-indigo-200 text-indigo-700 font-semibold px-4 py-2 rounded-xl text-sm transition-colors">
+                + 10 words
+              </button>
+              <button onclick="addWords(20)" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-xl text-sm transition-colors">
+                + 20 words
+              </button>
+            </div>
+          </div>
+
+          <!-- Level quick-add -->
+          <div class="mt-4 pt-4 border-t border-indigo-100">
+            <p class="text-xs text-indigo-500 font-semibold uppercase tracking-wide mb-3">Or add by level</p>
+            <div class="flex flex-wrap gap-2">
+              <button onclick="addByLevel('grade_6_8')" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors">
+                Grades 6–8
+              </button>
+              <button onclick="addByLevel('grade_9_10')" class="bg-blue-100 hover:bg-blue-200 text-blue-700 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors">
+                Grades 9–10
+              </button>
+              <button onclick="addByLevel('sat')" class="bg-violet-100 hover:bg-violet-200 text-violet-700 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors">
+                SAT / 11–12
+              </button>
+              <button onclick="addByLevel('gre')" class="bg-rose-100 hover:bg-rose-200 text-rose-700 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors">
+                GRE
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <!-- Quick links -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <a href="/word-of-the-day" class="bg-white hover:bg-indigo-50 rounded-xl border border-gray-100 p-5 transition-colors">
+          <div class="text-2xl mb-2">📖</div>
+          <div class="font-semibold text-gray-800">Word of the Day</div>
+          <div class="text-sm text-gray-500 mt-1">Discover today's featured word</div>
+        </a>
+        <a href="/words" class="bg-white hover:bg-indigo-50 rounded-xl border border-gray-100 p-5 transition-colors">
+          <div class="text-2xl mb-2">🔍</div>
+          <div class="font-semibold text-gray-800">Browse All Words</div>
+          <div class="text-sm text-gray-500 mt-1">Search and queue words to study</div>
+        </a>
+        <div class="bg-white rounded-xl border border-gray-100 p-5">
+          <div class="text-2xl mb-2">📊</div>
+          <div class="font-semibold text-gray-800">All-time Stats</div>
+          <div class="text-sm text-gray-500 mt-1">
+            {stats.total_reviewed} reviewed · {stats.total_reviewed > 0 ? Math.round((stats.total_correct / stats.total_reviewed) * 100) : 0}% accuracy
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      let toastTimer: ReturnType<typeof setTimeout> | null = null;
+
+      function showToast(msg: string) {
+        const toast = document.getElementById('toast')!;
+        toast.textContent = msg;
+        toast.classList.remove('hidden');
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+          toast.classList.add('hidden');
+          window.location.reload();
+        }, 2000);
+      }
+
+      async function addWords(count: number) {
+        const res = await fetch('/api/queue', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ count }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          showToast(`Added ${data.added} new words! Ready to study.`);
+        }
+      }
+
+      async function addByLevel(level: string) {
+        const res = await fetch('/api/queue', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ level, count: 999 }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          showToast(`Added ${data.added} words! Ready to study.`);
+        }
+      }
+
+      (window as any).addWords = addWords;
+      (window as any).addByLevel = addByLevel;
+    </script>
+  </body>
+</html>

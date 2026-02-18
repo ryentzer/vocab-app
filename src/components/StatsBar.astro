@@ -1,0 +1,63 @@
+---
+interface Props {
+  streak: number;
+  longestStreak: number;
+  dueCount: number;
+  newCount: number;
+  learningCount: number;
+  masteredCount: number;
+}
+
+const { streak, longestStreak, dueCount, newCount, learningCount, masteredCount } = Astro.props;
+const total = newCount + learningCount + masteredCount;
+const masteredPct = total > 0 ? Math.round((masteredCount / total) * 100) : 0;
+const learningPct = total > 0 ? Math.round((learningCount / total) * 100) : 0;
+---
+
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+  <!-- Streak -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col items-center">
+    <div class="text-4xl font-bold text-orange-500">{streak}</div>
+    <div class="text-sm text-gray-500 mt-1 text-center">Day Streak</div>
+    {longestStreak > 0 && (
+      <div class="text-xs text-gray-400 mt-1">Best: {longestStreak}</div>
+    )}
+  </div>
+
+  <!-- Due today -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col items-center">
+    <div class="text-4xl font-bold text-indigo-600">{dueCount}</div>
+    <div class="text-sm text-gray-500 mt-1 text-center">Due Today</div>
+  </div>
+
+  <!-- Mastery breakdown -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 col-span-2">
+    <div class="text-xs text-gray-500 uppercase tracking-wide mb-3 font-semibold">Mastery</div>
+    <div class="flex gap-2 mb-2">
+      <div class="flex items-center gap-1 text-sm">
+        <span class="w-3 h-3 rounded-full bg-gray-300 inline-block"></span>
+        <span class="text-gray-600">New <strong>{newCount}</strong></span>
+      </div>
+      <div class="flex items-center gap-1 text-sm">
+        <span class="w-3 h-3 rounded-full bg-yellow-400 inline-block"></span>
+        <span class="text-gray-600">Learning <strong>{learningCount}</strong></span>
+      </div>
+      <div class="flex items-center gap-1 text-sm">
+        <span class="w-3 h-3 rounded-full bg-green-500 inline-block"></span>
+        <span class="text-gray-600">Mastered <strong>{masteredCount}</strong></span>
+      </div>
+    </div>
+    <!-- Bar -->
+    <div class="w-full bg-gray-200 rounded-full h-3 flex overflow-hidden">
+      <div
+        class="bg-yellow-400 h-3 transition-all duration-500"
+        style={`width: ${learningPct}%`}
+      ></div>
+      <div
+        class="bg-green-500 h-3 transition-all duration-500"
+        style={`width: ${masteredPct}%`}
+      ></div>
+    </div>
+    <div class="text-xs text-gray-400 mt-1">{masteredPct}% mastered of {total} words</div>
+  </div>
+</div>

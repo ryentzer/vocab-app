@@ -1,0 +1,166 @@
+---
+interface Props {
+  wordId: number;
+  progressId: number;
+  word: string;
+  partOfSpeech: string | null;
+  definition: string;
+  example: string | null;
+  cardIndex: number;
+  totalCards: number;
+}
+
+const { wordId, progressId, word, partOfSpeech, definition, example, cardIndex, totalCards } = Astro.props;
+---
+
+<div
+  id="flashcard"
+  class="relative w-full max-w-2xl mx-auto"
+  data-word-id={wordId}
+  data-progress-id={progressId}
+>
+  <!-- Progress indicator -->
+  <div class="flex items-center justify-between mb-4 text-sm text-gray-500">
+    <span>Card {cardIndex + 1} of {totalCards}</span>
+    <div class="w-48 bg-gray-200 rounded-full h-2">
+      <div
+        class="bg-indigo-500 h-2 rounded-full transition-all duration-300"
+        style={`width: ${((cardIndex) / totalCards) * 100}%`}
+      ></div>
+    </div>
+  </div>
+
+  <!-- Card container (perspective for 3-D flip) -->
+  <div
+    id="card-inner"
+    class="relative w-full cursor-pointer"
+    style="perspective: 1000px;"
+    onclick="flipCard()"
+  >
+    <div
+      id="card-body"
+      class="relative w-full transition-transform duration-500"
+      style="transform-style: preserve-3d;"
+    >
+      <!-- Front face -->
+      <div
+        id="card-front"
+        class="w-full bg-white rounded-2xl shadow-lg border border-gray-100 p-10 text-center"
+        style="backface-visibility: hidden;"
+      >
+        <p class="text-xs uppercase tracking-widest text-indigo-400 font-semibold mb-3">
+          {partOfSpeech ?? 'word'}
+        </p>
+        <h2 class="text-5xl font-bold text-gray-900 mb-6">{word}</h2>
+        <p class="text-gray-400 text-sm mt-8">Tap to reveal definition</p>
+      </div>
+
+      <!-- Back face -->
+      <div
+        id="card-back"
+        class="absolute inset-0 w-full bg-indigo-50 rounded-2xl shadow-lg border border-indigo-100 p-10 text-center flex flex-col justify-center"
+        style="backface-visibility: hidden; transform: rotateY(180deg);"
+      >
+        <p class="text-xs uppercase tracking-widest text-indigo-400 font-semibold mb-3">
+          {partOfSpeech ?? 'word'}
+        </p>
+        <h2 class="text-3xl font-bold text-gray-900 mb-4">{word}</h2>
+        <p class="text-lg text-gray-700 leading-relaxed mb-6">{definition}</p>
+        {example && (
+          <blockquote class="text-gray-500 italic text-sm border-l-4 border-indigo-300 pl-4 text-left">
+            "{example}"
+          </blockquote>
+        )}
+      </div>
+    </div>
+  </div>
+
+  <!-- Rating buttons (hidden until flipped) -->
+  <div
+    id="rating-buttons"
+    class="hidden mt-6 grid grid-cols-3 gap-3"
+  >
+    <button
+      onclick="submitRating(0)"
+      class="flex flex-col items-center py-3 px-4 rounded-xl bg-red-100 hover:bg-red-200 text-red-700 font-semibold transition-colors"
+    >
+      <span class="text-lg">✕</span>
+      <span class="text-sm mt-1">Missed</span>
+    </button>
+    <button
+      onclick="submitRating(2)"
+      class="flex flex-col items-center py-3 px-4 rounded-xl bg-yellow-100 hover:bg-yellow-200 text-yellow-700 font-semibold transition-colors"
+    >
+      <span class="text-lg">~</span>
+      <span class="text-sm mt-1">Hard</span>
+    </button>
+    <button
+      onclick="submitRating(3)"
+      class="flex flex-col items-center py-3 px-4 rounded-xl bg-green-100 hover:bg-green-200 text-green-700 font-semibold transition-colors"
+    >
+      <span class="text-lg">✓</span>
+      <span class="text-sm mt-1">Good</span>
+    </button>
+  </div>
+
+  <!-- Easy button -->
+  <div id="easy-button" class="hidden mt-2">
+    <button
+      onclick="submitRating(5)"
+      class="w-full flex items-center justify-center py-3 px-4 rounded-xl bg-blue-100 hover:bg-blue-200 text-blue-700 font-semibold transition-colors"
+    >
+      <span class="text-lg mr-2">★</span>
+      <span>Easy — I knew it</span>
+    </button>
+  </div>
+</div>
+
+<script>
+  let isFlipped = false;
+
+  function flipCard() {
+    if (isFlipped) return;
+    isFlipped = true;
+    const body = document.getElementById('card-body');
+    if (body) body.style.transform = 'rotateY(180deg)';
+    const ratings = document.getElementById('rating-buttons');
+    const easy = document.getElementById('easy-button');
+    if (ratings) ratings.classList.remove('hidden');
+    if (easy) easy.classList.remove('hidden');
+    // prevent clicking the card again
+    const inner = document.getElementById('card-inner');
+    if (inner) inner.style.cursor = 'default';
+  }
+
+  async function submitRating(quality: number) {
+    const card = document.getElementById('flashcard');
+    const progressId = card?.dataset.progressId;
+
+    // Disable all buttons immediately
+    document.querySelectorAll('#rating-buttons button, #easy-button button').forEach((btn) => {
+      (btn as HTMLButtonElement).disabled = true;
+    });
+
+    try {
+      const res = await fetch('/api/answer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ progressId: Number(progressId), quality }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        // Navigate to next card or session end
+        window.location.href = data.nextUrl;
+      } else {
+        console.error('Failed to submit rating');
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  // Expose to global scope for inline onclick handlers
+  (window as any).flipCard = flipCard;
+  (window as any).submitRating = submitRating;
+</script>

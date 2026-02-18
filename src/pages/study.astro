@@ -1,0 +1,115 @@
+---
+import { seedIfEmpty } from '../lib/seed.js';
+import { getDueWords } from '../lib/db.js';
+import Flashcard from '../components/Flashcard.astro';
+
+seedIfEmpty();
+
+const url = new URL(Astro.request.url);
+const cardIndexParam = url.searchParams.get('card');
+const cardIndex = cardIndexParam ? parseInt(cardIndexParam, 10) : 0;
+
+// Session summary mode
+const done = url.searchParams.get('done') === '1';
+const reviewed = parseInt(url.searchParams.get('reviewed') ?? '0', 10);
+const correct = parseInt(url.searchParams.get('correct') ?? '0', 10);
+const streak = parseInt(url.searchParams.get('streak') ?? '0', 10);
+
+const dueWords = getDueWords(20);
+const totalCards = dueWords.length;
+const currentWord = dueWords[cardIndex];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VocabUp — Study Session</title>
+  </head>
+  <body class="bg-gray-50 min-h-screen font-sans">
+    <!-- Nav -->
+    <nav class="bg-white border-b border-gray-200 px-6 py-4">
+      <div class="max-w-4xl mx-auto flex items-center justify-between">
+        <a href="/" class="text-xl font-bold text-indigo-600 tracking-tight">VocabUp</a>
+        <div class="flex gap-6 text-sm font-medium text-gray-600">
+          <a href="/" class="hover:text-indigo-600 transition-colors">Dashboard</a>
+          <a href="/study" class="text-indigo-600">Study</a>
+          <a href="/word-of-the-day" class="hover:text-indigo-600 transition-colors">Word of the Day</a>
+          <a href="/words" class="hover:text-indigo-600 transition-colors">Browse</a>
+        </div>
+      </div>
+    </nav>
+
+    <main class="max-w-2xl mx-auto px-6 py-12">
+      {done ? (
+        <!-- Session Summary -->
+        <div class="text-center">
+          <div class="text-6xl mb-6">{correct === reviewed ? '🏆' : correct > reviewed / 2 ? '🎯' : '📚'}</div>
+          <h1 class="text-3xl font-bold text-gray-900 mb-2">Session Complete!</h1>
+          <p class="text-gray-500 mb-8">Great work — keep up the momentum.</p>
+
+          <div class="grid grid-cols-3 gap-4 mb-8">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+              <div class="text-3xl font-bold text-indigo-600">{reviewed}</div>
+              <div class="text-sm text-gray-500 mt-1">Reviewed</div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+              <div class="text-3xl font-bold text-green-600">{reviewed > 0 ? Math.round((correct / reviewed) * 100) : 0}%</div>
+              <div class="text-sm text-gray-500 mt-1">Accuracy</div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+              <div class="text-3xl font-bold text-orange-500">{streak}</div>
+              <div class="text-sm text-gray-500 mt-1">Day Streak</div>
+            </div>
+          </div>
+
+          <div class="flex gap-4 justify-center">
+            <a
+              href="/"
+              class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
+            >
+              Back to Dashboard
+            </a>
+            <a
+              href="/words"
+              class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold px-6 py-3 rounded-xl transition-colors"
+            >
+              Browse Words
+            </a>
+          </div>
+        </div>
+      ) : totalCards === 0 ? (
+        <!-- No cards due -->
+        <div class="text-center">
+          <div class="text-6xl mb-6">✅</div>
+          <h1 class="text-3xl font-bold text-gray-900 mb-2">Nothing due!</h1>
+          <p class="text-gray-500 mb-8">You're all caught up. Check back tomorrow for more reviews.</p>
+          <a href="/" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-3 rounded-xl transition-colors">
+            Back to Dashboard
+          </a>
+        </div>
+      ) : currentWord ? (
+        <!-- Flashcard -->
+        <>
+          <h1 class="text-2xl font-bold text-gray-800 mb-6 text-center">Study Session</h1>
+          <Flashcard
+            wordId={currentWord.id}
+            progressId={currentWord.progress_id!}
+            word={currentWord.word}
+            partOfSpeech={currentWord.part_of_speech}
+            definition={currentWord.definition}
+            example={currentWord.example}
+            cardIndex={cardIndex}
+            totalCards={totalCards}
+          />
+        </>
+      ) : (
+        <!-- Fallback: index out of range -->
+        <div class="text-center">
+          <p class="text-gray-500">Something went wrong. <a href="/study" class="text-indigo-600 underline">Start over</a>.</p>
+        </div>
+      )}
+    </main>
+  </body>
+</html>

@@ -1,0 +1,111 @@
+---
+import { seedIfEmpty } from '../lib/seed.js';
+import { getWordOfTheDay, getYesterdaysWord, upsertProgress } from '../lib/db.js';
+import { todayISO } from '../lib/srs.js';
+import { LEVEL_LABELS, LEVEL_COLORS } from '../lib/levels.js';
+
+seedIfEmpty();
+
+// Handle "Add to queue" POST
+if (Astro.request.method === 'POST') {
+  const formData = await Astro.request.formData();
+  const wordId = parseInt(formData.get('wordId') as string, 10);
+  if (!isNaN(wordId)) {
+    upsertProgress(wordId, todayISO());
+  }
+  return Astro.redirect('/word-of-the-day?added=1');
+}
+
+const todayWord = getWordOfTheDay();
+const yesterdayWord = getYesterdaysWord();
+const added = new URL(Astro.request.url).searchParams.get('added') === '1';
+
+const levelLabels = LEVEL_LABELS;
+const levelColors = LEVEL_COLORS;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VocabUp — Word of the Day</title>
+  </head>
+  <body class="bg-gray-50 min-h-screen font-sans">
+    <!-- Nav -->
+    <nav class="bg-white border-b border-gray-200 px-6 py-4">
+      <div class="max-w-4xl mx-auto flex items-center justify-between">
+        <a href="/" class="text-xl font-bold text-indigo-600 tracking-tight">VocabUp</a>
+        <div class="flex gap-6 text-sm font-medium text-gray-600">
+          <a href="/" class="hover:text-indigo-600 transition-colors">Dashboard</a>
+          <a href="/study" class="hover:text-indigo-600 transition-colors">Study</a>
+          <a href="/word-of-the-day" class="text-indigo-600">Word of the Day</a>
+          <a href="/words" class="hover:text-indigo-600 transition-colors">Browse</a>
+        </div>
+      </div>
+    </nav>
+
+    <main class="max-w-2xl mx-auto px-6 py-12">
+      <div class="text-center mb-2">
+        <span class="text-xs uppercase tracking-widest text-gray-400 font-semibold">
+          {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+        </span>
+      </div>
+      <h1 class="text-3xl font-bold text-gray-900 text-center mb-8">Word of the Day</h1>
+
+      {added && (
+        <div class="bg-green-50 border border-green-200 text-green-800 rounded-xl px-4 py-3 mb-6 text-center text-sm font-medium">
+          ✓ Added to your study queue for today!
+        </div>
+      )}
+
+      <!-- Today's word card -->
+      <div class="bg-white rounded-2xl shadow-md border border-gray-100 p-10 text-center mb-8">
+        <div class="flex items-center justify-center gap-3 mb-4">
+          {todayWord.part_of_speech && (
+            <span class="text-sm text-gray-400 italic">{todayWord.part_of_speech}</span>
+          )}
+          {todayWord.level && (
+            <span class={`text-xs font-semibold px-2 py-1 rounded-full ${levelColors[todayWord.level] ?? 'bg-gray-100 text-gray-600'}`}>
+              {levelLabels[todayWord.level] ?? todayWord.level}
+            </span>
+          )}
+        </div>
+        <h2 class="text-6xl font-bold text-indigo-700 mb-6">{todayWord.word}</h2>
+        <p class="text-xl text-gray-700 leading-relaxed mb-6">{todayWord.definition}</p>
+        {todayWord.example && (
+          <blockquote class="text-gray-500 italic border-l-4 border-indigo-300 pl-6 text-left text-base leading-relaxed">
+            "{todayWord.example}"
+          </blockquote>
+        )}
+
+        <!-- Add to queue button -->
+        {!added && (
+          <form method="POST" class="mt-8">
+            <input type="hidden" name="wordId" value={todayWord.id} />
+            <button
+              type="submit"
+              class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
+            >
+              + Add to Study Queue
+            </button>
+          </form>
+        )}
+      </div>
+
+      <!-- Yesterday's word -->
+      {yesterdayWord.id !== todayWord.id && (
+        <div class="bg-gray-50 rounded-xl border border-gray-200 p-6">
+          <div class="text-xs uppercase tracking-widest text-gray-400 font-semibold mb-3">Yesterday's Word</div>
+          <div class="flex items-baseline gap-3">
+            <span class="text-2xl font-bold text-gray-700">{yesterdayWord.word}</span>
+            {yesterdayWord.part_of_speech && (
+              <span class="text-sm text-gray-400 italic">{yesterdayWord.part_of_speech}</span>
+            )}
+          </div>
+          <p class="text-gray-600 mt-2">{yesterdayWord.definition}</p>
+        </div>
+      )}
+    </main>
+  </body>
+</html>
