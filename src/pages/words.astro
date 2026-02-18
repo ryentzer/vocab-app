@@ -96,18 +96,20 @@ const wordsWithProgress = db.prepare(`
             <table class="w-full">
                 <thead class="bg-gray-50 border-b border-gray-100">
                 <tr>
-                    <th class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wide text-gray-500">Word
+                    <th data-sort="word" class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wide text-gray-500 cursor-pointer select-none hover:text-indigo-600">
+                        <span class="inline-flex items-center gap-1">Word<span class="sort-indicator text-gray-400"><i class="fa-solid fa-sort"></i></span></span>
                     </th>
-                    <th class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wide text-gray-500 hidden md:table-cell">
-                        POS
+                    <th data-sort="pos" class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wide text-gray-500 cursor-pointer select-none hover:text-indigo-600 hidden md:table-cell">
+                        <span class="inline-flex items-center gap-1">POS<span class="sort-indicator text-gray-400"><i class="fa-solid fa-sort"></i></span></span>
                     </th>
                     <th class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
                         Definition
                     </th>
-                    <th class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wide text-gray-500">Level
+                    <th data-sort="level" class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wide text-gray-500 cursor-pointer select-none hover:text-indigo-600">
+                        <span class="inline-flex items-center gap-1">Level<span class="sort-indicator text-gray-400"><i class="fa-solid fa-sort"></i></span></span>
                     </th>
-                    <th class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                        Mastery
+                    <th data-sort="mastery" class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wide text-gray-500 cursor-pointer select-none hover:text-indigo-600">
+                        <span class="inline-flex items-center gap-1">Mastery<span class="sort-indicator text-gray-400"><i class="fa-solid fa-sort"></i></span></span>
                     </th>
                     <th class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wide text-gray-500">Study
                     </th>
@@ -334,6 +336,54 @@ const wordsWithProgress = db.prepare(`
 
         window.closeModal = closeModal;
         window.queueFromModal = queueFromModal;
+
+        // ── Column sorting ─────────────────────────────────────────────────────
+        const SVG_NEUTRAL = '<i class="fa-solid fa-sort"></i>';
+        const SVG_UP      = '<i class="fa-solid fa-chevron-up"></i>';
+        const SVG_DOWN    = '<i class="fa-solid fa-chevron-down"></i>';
+
+        const LEVEL_ORDER = { grade_6_8: 0, grade_9_10: 1, sat: 2, gre: 3 };
+        let sortCol = null;
+        let sortDir = 'asc';
+
+        function getSortValue(row, col) {
+            if (col === 'word') return (row.dataset.word ?? '').toLowerCase();
+            if (col === 'pos')  return (row.dataset.pos  ?? '').toLowerCase();
+            if (col === 'level') return LEVEL_ORDER[row.dataset.level] ?? 99;
+            if (col === 'mastery') return parseInt(row.dataset.mastery ?? '0', 10);
+        }
+
+        function applySort(col) {
+            sortDir = sortCol === col && sortDir === 'asc' ? 'desc' : 'asc';
+            sortCol = col;
+
+            const rows = Array.from(tbody.querySelectorAll('tr.word-row'));
+            rows.sort((a, b) => {
+                const va = getSortValue(a, col);
+                const vb = getSortValue(b, col);
+                if (va < vb) return sortDir === 'asc' ? -1 : 1;
+                if (va > vb) return sortDir === 'asc' ?  1 : -1;
+                return 0;
+            });
+            rows.forEach(row => tbody.appendChild(row));
+
+            document.querySelectorAll('th[data-sort]').forEach(th => {
+                const indicator = th.querySelector('.sort-indicator');
+                if (th.dataset.sort === sortCol) {
+                    indicator.innerHTML = sortDir === 'asc' ? SVG_UP : SVG_DOWN;
+                    th.classList.add('text-indigo-600');
+                    th.classList.remove('text-gray-500');
+                } else {
+                    indicator.innerHTML = SVG_NEUTRAL;
+                    th.classList.remove('text-indigo-600');
+                    th.classList.add('text-gray-500');
+                }
+            });
+        }
+
+        document.querySelectorAll('th[data-sort]').forEach(th => {
+            th.addEventListener('click', () => applySort(th.dataset.sort));
+        });
     </script>
 </body>
 </html>
