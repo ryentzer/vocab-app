@@ -1,0 +1,475 @@
+---
+// No DB needed — this is a pure reference page
+
+const tiers = [
+  {
+    id: 'grades_8_12',
+    label: 'Grades 8–12',
+    color: 'emerald',
+    description: 'The traditional eight parts of speech covered in middle and high school English.',
+    parts: [
+      {
+        name: 'Noun',
+        abbreviation: 'n.',
+        definition: 'A word that names a person, place, thing, or idea.',
+        subtypes: [
+          { name: 'Common', example: 'dog, city, book' },
+          { name: 'Proper', example: 'Paris, Shakespeare, Amazon' },
+          { name: 'Abstract', example: 'freedom, love, justice' },
+          { name: 'Collective', example: 'flock, jury, team' },
+          { name: 'Countable', example: 'apple → apples' },
+          { name: 'Uncountable (mass)', example: 'water, air, information' },
+        ],
+        example: 'The <strong>dog</strong> chased the <strong>ball</strong> across the <strong>yard</strong>.',
+        tip: 'Test: can you put "a/an" or "the" in front of it? If so, it\'s likely a noun.',
+      },
+      {
+        name: 'Pronoun',
+        abbreviation: 'pron.',
+        definition: 'A word used in place of a noun to avoid repetition.',
+        subtypes: [
+          { name: 'Personal', example: 'I, you, he, she, it, we, they' },
+          { name: 'Possessive', example: 'mine, yours, hers, ours' },
+          { name: 'Reflexive', example: 'myself, yourself, themselves' },
+          { name: 'Relative', example: 'who, which, that' },
+          { name: 'Indefinite', example: 'anyone, everyone, nobody, something' },
+          { name: 'Demonstrative', example: 'this, that, these, those' },
+          { name: 'Interrogative', example: 'who, what, which' },
+        ],
+        example: '<strong>She</strong> picked up the bag and handed <strong>it</strong> to <strong>him</strong>.',
+        tip: 'Pronouns must agree in number and gender with the noun they replace (their antecedent).',
+      },
+      {
+        name: 'Verb',
+        abbreviation: 'v.',
+        definition: 'A word that expresses an action, occurrence, or state of being.',
+        subtypes: [
+          { name: 'Action', example: 'run, write, think, destroy' },
+          { name: 'Linking', example: 'be, seem, appear, become, feel' },
+          { name: 'Auxiliary (helping)', example: 'is, was, have, do, will, can, must' },
+          { name: 'Transitive', example: 'She kicked the ball. (takes an object)' },
+          { name: 'Intransitive', example: 'He laughed. (no object)' },
+        ],
+        example: 'The students <strong>studied</strong> hard and <strong>passed</strong> the exam.',
+        tip: 'Linking verbs connect the subject to a description. "She feels tired" — "feels" links "she" to "tired."',
+      },
+      {
+        name: 'Adjective',
+        abbreviation: 'adj.',
+        definition: 'A word that modifies or describes a noun or pronoun.',
+        subtypes: [
+          { name: 'Descriptive', example: 'tall, cold, brilliant' },
+          { name: 'Comparative', example: 'taller, colder, more brilliant' },
+          { name: 'Superlative', example: 'tallest, coldest, most brilliant' },
+          { name: 'Predicate', example: '"The sky is blue." (blue follows linking verb)' },
+          { name: 'Attributive', example: '"The blue sky." (blue precedes noun)' },
+        ],
+        example: 'The <strong>exhausted</strong> runner crossed the <strong>finish</strong> line with a <strong>triumphant</strong> smile.',
+        tip: 'Adjectives answer: What kind? Which one? How many? How much?',
+      },
+      {
+        name: 'Adverb',
+        abbreviation: 'adv.',
+        definition: 'A word that modifies a verb, adjective, or another adverb.',
+        subtypes: [
+          { name: 'Manner', example: 'quickly, carefully, loudly' },
+          { name: 'Time', example: 'yesterday, soon, always, never' },
+          { name: 'Place', example: 'here, there, everywhere' },
+          { name: 'Degree', example: 'very, too, quite, almost' },
+          { name: 'Frequency', example: 'often, rarely, usually, sometimes' },
+        ],
+        example: 'She spoke <strong>very</strong> <strong>quietly</strong> and <strong>carefully</strong> chose her words.',
+        tip: 'Many adverbs end in -ly, but not all (fast, hard, well). And not all -ly words are adverbs (friendly is an adjective).',
+      },
+      {
+        name: 'Preposition',
+        abbreviation: 'prep.',
+        definition: 'A word that shows the relationship between a noun (or pronoun) and another word in the sentence.',
+        subtypes: [
+          { name: 'Place', example: 'in, on, at, above, beneath, beside' },
+          { name: 'Time', example: 'before, after, during, since, until' },
+          { name: 'Direction', example: 'to, from, toward, through, across' },
+          { name: 'Compound', example: 'in front of, because of, next to' },
+        ],
+        example: 'She walked <strong>through</strong> the park <strong>before</strong> sunset and sat <strong>beside</strong> the fountain.',
+        tip: 'A preposition always leads a prepositional phrase: preposition + noun phrase ("in the park", "after school").',
+      },
+      {
+        name: 'Conjunction',
+        abbreviation: 'conj.',
+        definition: 'A word that connects words, phrases, or clauses.',
+        subtypes: [
+          { name: 'Coordinating (FANBOYS)', example: 'for, and, nor, but, or, yet, so' },
+          { name: 'Subordinating', example: 'because, although, while, if, since, unless, when' },
+          { name: 'Correlative', example: 'either…or, neither…nor, both…and, not only…but also' },
+        ],
+        example: 'She studied hard, <strong>so</strong> she passed. <strong>Although</strong> she was nervous, she did well.',
+        tip: 'Subordinating conjunctions begin dependent clauses. Coordinating conjunctions join grammatically equal elements.',
+      },
+      {
+        name: 'Interjection',
+        abbreviation: 'interj.',
+        definition: 'A word or phrase that expresses emotion and has no grammatical relation to the rest of the sentence.',
+        subtypes: [
+          { name: 'Strong (exclamation point)', example: 'Wow! Ouch! Yes! No!' },
+          { name: 'Mild (comma)', example: 'Well, I suppose so. Oh, that\'s interesting.' },
+        ],
+        example: '<strong>Wow,</strong> that was an incredible performance. <strong>Ouch!</strong> That stings.',
+        tip: 'Interjections are the only part of speech that stands completely alone grammatically.',
+      },
+    ],
+  },
+  {
+    id: 'college',
+    label: 'College',
+    color: 'blue',
+    description: 'Verbals, phrases, and clause structures typically encountered in college writing and introductory linguistics.',
+    parts: [
+      {
+        name: 'Participle',
+        abbreviation: 'part.',
+        definition: 'A verb form used as an adjective. Participles modify nouns but retain some verb-like properties.',
+        subtypes: [
+          { name: 'Present participle (-ing)', example: 'the running water, a barking dog' },
+          { name: 'Past participle (-ed / irregular)', example: 'the broken window, a stolen car' },
+          { name: 'Participial phrase', example: 'Running down the stairs, she tripped.' },
+          { name: 'Dangling participle (error)', example: '"Exhausted from the hike, the bed looked inviting." (Who was exhausted?)' },
+        ],
+        example: '<strong>Exhausted</strong> by the long day, he fell asleep the moment he sat down.',
+        tip: 'The participial phrase must be next to the noun it modifies, or you get a dangling modifier — one of the most common college writing errors.',
+      },
+      {
+        name: 'Gerund',
+        abbreviation: 'ger.',
+        definition: 'A verb form ending in -ing that functions as a noun.',
+        subtypes: [
+          { name: 'Subject', example: 'Swimming is great exercise.' },
+          { name: 'Object', example: 'She enjoys reading.' },
+          { name: 'Object of preposition', example: 'He is good at cooking.' },
+          { name: 'Predicate nominative', example: 'Her hobby is painting.' },
+        ],
+        example: '<strong>Running</strong> every morning changed his life. He credits <strong>exercising</strong> for his health.',
+        tip: 'Gerunds look identical to present participles (-ing) but function differently. "Running is fun" (gerund as subject) vs. "the running water" (participle as adjective).',
+      },
+      {
+        name: 'Infinitive',
+        abbreviation: 'inf.',
+        definition: 'The base form of a verb, usually preceded by "to." Can function as a noun, adjective, or adverb.',
+        subtypes: [
+          { name: 'As noun (subject)', example: 'To err is human.' },
+          { name: 'As noun (object)', example: 'She wants to leave.' },
+          { name: 'As adjective', example: 'He has a report to write.' },
+          { name: 'As adverb', example: 'She studied hard to pass.' },
+          { name: 'Split infinitive', example: '"to boldly go" — controversial but widely accepted today' },
+        ],
+        example: '<strong>To understand</strong> grammar is <strong>to</strong> write with greater precision.',
+        tip: 'Gerunds and infinitives are often interchangeable as objects ("I like swimming" / "I like to swim"), but sometimes not: "I stopped smoking" ≠ "I stopped to smoke."',
+      },
+      {
+        name: 'Appositive',
+        abbreviation: 'appos.',
+        definition: 'A noun or noun phrase placed next to another noun to identify or describe it.',
+        subtypes: [
+          { name: 'Nonrestrictive (commas)', example: 'My sister, a doctor, lives in Boston.' },
+          { name: 'Restrictive (no commas)', example: 'My sister Sarah lives in Boston.' },
+        ],
+        example: 'The author, <strong>a self-taught programmer</strong>, wrote the entire app in a weekend.',
+        tip: 'Nonrestrictive appositives add extra info and need commas. Restrictive appositives identify which one and take no commas.',
+      },
+      {
+        name: 'Clause',
+        abbreviation: 'cl.',
+        definition: 'A group of words containing both a subject and a predicate.',
+        subtypes: [
+          { name: 'Independent (main)', example: 'She studied. / She studied, and she passed.' },
+          { name: 'Dependent (subordinate)', example: 'because she studied hard' },
+          { name: 'Relative', example: 'the book that she recommended' },
+          { name: 'Noun clause', example: 'What he said surprised everyone.' },
+          { name: 'Adverbial clause', example: 'Although it was raining, they played.' },
+          { name: 'Adjectival clause', example: 'The professor who inspired me retired.' },
+        ],
+        example: 'She passed the exam <strong>because she had studied</strong>, which was a relief <strong>that her parents shared</strong>.',
+        tip: 'A clause has a subject + verb. A phrase does not. "Running to the store" is a phrase; "She ran to the store" is a clause.',
+      },
+      {
+        name: 'Phrase Types',
+        abbreviation: 'phr.',
+        definition: 'A group of related words that functions as a unit but lacks a subject-predicate pair.',
+        subtypes: [
+          { name: 'Noun phrase', example: 'the exhausted student' },
+          { name: 'Verb phrase', example: 'has been studying' },
+          { name: 'Prepositional phrase', example: 'in the library' },
+          { name: 'Participial phrase', example: 'Exhausted from studying, …' },
+          { name: 'Gerund phrase', example: 'Studying late at night is …' },
+          { name: 'Infinitive phrase', example: 'to finish the assignment' },
+          { name: 'Absolute phrase', example: 'Her work finished, she went home.' },
+        ],
+        example: '<strong>Exhausted from the long flight</strong>, she went straight to the hotel and fell asleep.',
+        tip: 'An absolute phrase modifies the entire main clause rather than a single word. It consists of a noun + participle and is set off by a comma.',
+      },
+    ],
+  },
+  {
+    id: 'advanced_degree',
+    label: 'Advanced Degree',
+    color: 'violet',
+    description: 'Formal grammatical categories and concepts from linguistics, used in graduate-level writing, rhetoric, and language study.',
+    parts: [
+      {
+        name: 'Determiner',
+        abbreviation: 'det.',
+        definition: 'In formal linguistics, a broader category than "article" that includes all words that introduce and limit a noun. Articles are a subset of determiners.',
+        subtypes: [
+          { name: 'Articles', example: 'a, an, the' },
+          { name: 'Demonstratives', example: 'this, that, these, those' },
+          { name: 'Possessives', example: 'my, your, his, her, its, our, their' },
+          { name: 'Quantifiers', example: 'some, any, each, every, few, many, much, all' },
+          { name: 'Numerals', example: 'one, two, first, second' },
+          { name: 'Distributives', example: 'each, every, either, neither' },
+        ],
+        example: '<strong>Each</strong> student must submit <strong>their</strong> assignment by <strong>the</strong> deadline.',
+        tip: 'High school grammar treats articles (a, an, the) as adjectives or their own category. Modern linguistics groups them under "determiners" — a functional category, not a lexical one.',
+      },
+      {
+        name: 'Modal Auxiliary',
+        abbreviation: 'mod.',
+        definition: 'A subclass of auxiliary verbs that express modality — possibility, necessity, permission, ability, or obligation. They do not inflect (no -s, -ed, -ing forms).',
+        subtypes: [
+          { name: 'Ability', example: 'can, could' },
+          { name: 'Permission', example: 'may, might, can' },
+          { name: 'Obligation', example: 'must, should, ought to' },
+          { name: 'Prediction / volition', example: 'will, would, shall' },
+          { name: 'Semi-modals', example: 'have to, be going to, used to, need to' },
+          { name: 'Epistemic use (certainty)', example: '"She must be home." (logical inference)' },
+          { name: 'Deontic use (obligation)', example: '"You must leave now." (command)' },
+        ],
+        example: 'You <strong>should</strong> submit early. She <strong>must</strong> have finished by now.',
+        tip: 'The same modal can carry epistemic meaning (about knowledge/certainty) or deontic meaning (about obligation). Context determines which. This distinction is central to argumentation and academic writing.',
+      },
+      {
+        name: 'Aspect',
+        abbreviation: 'asp.',
+        definition: 'A grammatical category expressing how an event or action extends over time — distinct from tense (when) and mood (attitude toward reality).',
+        subtypes: [
+          { name: 'Simple (no aspect marker)', example: 'She writes. / She wrote.' },
+          { name: 'Progressive (ongoing)', example: 'She is writing. / She was writing.' },
+          { name: 'Perfect (completed, relevance to now)', example: 'She has written. / She had written.' },
+          { name: 'Perfect progressive', example: 'She has been writing for hours.' },
+        ],
+        example: 'By the time he arrived, she <strong>had been writing</strong> for six hours — past perfect progressive.',
+        tip: '"I lived in Paris" (simple past — just states a fact) vs. "I have lived in Paris" (present perfect — implies ongoing relevance or recent experience). This distinction trips up even advanced writers.',
+      },
+      {
+        name: 'Mood',
+        abbreviation: 'mood',
+        definition: 'A verb property expressing the speaker\'s attitude toward the action — whether it is real, possible, desired, or commanded.',
+        subtypes: [
+          { name: 'Indicative', example: 'She goes to school. (factual statement)' },
+          { name: 'Imperative', example: 'Go to school. (command/request)' },
+          { name: 'Subjunctive', example: 'If she were here… / I suggest that he be present.' },
+          { name: 'Conditional', example: 'If I had studied, I would have passed.' },
+        ],
+        example: 'I wish she <strong>were</strong> here. If he <strong>were</strong> to resign, everything would change.',
+        tip: 'The subjunctive uses "were" (not "was") in contrary-to-fact conditions: "If I were president…" This is the single most misused mood in English. Formal writing and graduate work require it.',
+      },
+      {
+        name: 'Voice',
+        abbreviation: 'v.',
+        definition: 'Indicates whether the subject of the sentence performs or receives the action of the verb.',
+        subtypes: [
+          { name: 'Active', example: 'The researcher conducted the study.' },
+          { name: 'Passive', example: 'The study was conducted by the researcher.' },
+          { name: 'Agentless passive', example: 'The study was conducted. (agent omitted)' },
+          { name: 'Middle voice', example: '"The door opened." (agent implied but not stated)' },
+        ],
+        example: 'Active: <strong>Scientists discovered</strong> the gene. Passive: <strong>The gene was discovered</strong> in 1998.',
+        tip: 'Passive voice is not wrong — it is strategically used in academic writing to emphasize the action rather than the actor, or when the agent is unknown or irrelevant. Overuse makes prose weak; strategic use is a mark of sophistication.',
+      },
+      {
+        name: 'Complementizer',
+        abbreviation: 'comp.',
+        definition: 'A word that introduces a subordinate clause, marking it as a complement of a verb, adjective, or noun. Often treated as a subtype of conjunction in high school but a distinct category in formal syntax.',
+        subtypes: [
+          { name: 'That', example: 'She believes that he is right.' },
+          { name: 'Whether / if', example: 'I wonder whether it will rain.' },
+          { name: 'For', example: 'It is important for you to understand.' },
+          { name: 'Wh-words (in embedded questions)', example: 'She asked what he meant.' },
+        ],
+        example: 'He argued <strong>that</strong> the evidence was inconclusive and questioned <strong>whether</strong> the study could be replicated.',
+        tip: 'In X-bar syntax (transformational grammar), complementizers head their own phrase (CP — Complementizer Phrase) and are the highest functional projection in the clause hierarchy. This framework underlies most academic linguistic analysis.',
+      },
+      {
+        name: 'Deixis',
+        abbreviation: 'deix.',
+        definition: 'Words and phrases whose interpretation is relative to context — specifically to the speaker, time, and place of utterance. From the Greek for "pointing."',
+        subtypes: [
+          { name: 'Person deixis', example: 'I, you, we (shifts with speaker)' },
+          { name: 'Spatial deixis', example: 'here, there, this, that' },
+          { name: 'Temporal deixis', example: 'now, then, yesterday, tomorrow' },
+          { name: 'Discourse deixis', example: '"As mentioned above…" "The following argument…"' },
+          { name: 'Social deixis', example: 'formal you (vous/Sie) vs. informal (tu/du) in other languages' },
+        ],
+        example: '"<strong>Here</strong> is the problem with <strong>that</strong> approach, as I see it <strong>now</strong>."',
+        tip: 'Deixis is central to pragmatics, rhetoric, and discourse analysis. Understanding it helps you control how readers position themselves relative to your argument — a key skill in persuasive academic writing.',
+      },
+    ],
+  },
+];
+
+const colorMap: Record<string, { bg: string; border: string; badge: string; header: string; accent: string; subtypeBg: string }> = {
+  emerald: {
+    bg: 'bg-emerald-50',
+    border: 'border-emerald-200',
+    badge: 'bg-emerald-100 text-emerald-700',
+    header: 'text-emerald-800',
+    accent: 'border-emerald-400',
+    subtypeBg: 'bg-emerald-50',
+  },
+  blue: {
+    bg: 'bg-blue-50',
+    border: 'border-blue-200',
+    badge: 'bg-blue-100 text-blue-700',
+    header: 'text-blue-800',
+    accent: 'border-blue-400',
+    subtypeBg: 'bg-blue-50',
+  },
+  violet: {
+    bg: 'bg-violet-50',
+    border: 'border-violet-200',
+    badge: 'bg-violet-100 text-violet-700',
+    header: 'text-violet-800',
+    accent: 'border-violet-400',
+    subtypeBg: 'bg-violet-50',
+  },
+};
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VocabUp — Parts of Speech</title>
+  </head>
+  <body class="bg-gray-50 min-h-screen font-sans">
+    <nav class="bg-white border-b border-gray-200 px-6 py-4">
+      <div class="max-w-4xl mx-auto flex items-center justify-between">
+        <a href="/" class="text-xl font-bold text-indigo-600 tracking-tight">VocabUp</a>
+        <div class="flex gap-5 text-sm font-medium text-gray-600 flex-wrap">
+          <a href="/" class="hover:text-indigo-600 transition-colors">Dashboard</a>
+          <a href="/study" class="hover:text-indigo-600 transition-colors">Study</a>
+          <a href="/word-of-the-day" class="hover:text-indigo-600 transition-colors">Word of the Day</a>
+          <a href="/words" class="hover:text-indigo-600 transition-colors">Browse</a>
+          <a href="/parts-of-speech" class="text-indigo-600">Parts of Speech</a>
+        </div>
+      </div>
+    </nav>
+
+    <main class="max-w-4xl mx-auto px-6 py-10">
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Parts of Speech</h1>
+        <p class="text-gray-500 mt-2 max-w-2xl">
+          A reference guide to grammatical categories, organized by when they're typically taught — from the eight traditional parts of speech through college-level verbals to graduate-level formal linguistics.
+        </p>
+      </div>
+
+      <!-- Tier nav pills -->
+      <div class="flex gap-3 mb-10 flex-wrap">
+        {tiers.map((tier) => {
+          const c = colorMap[tier.color]!;
+          return (
+            <a
+              href={`#${tier.id}`}
+              class={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${c.badge} hover:opacity-80`}
+            >
+              {tier.label}
+            </a>
+          );
+        })}
+      </div>
+
+      <!-- Tiers -->
+      {tiers.map((tier) => {
+        const c = colorMap[tier.color]!;
+        return (
+          <section id={tier.id} class="mb-16 scroll-mt-6">
+            <!-- Tier header -->
+            <div class={`rounded-2xl border ${c.border} ${c.bg} px-6 py-5 mb-6`}>
+              <div class="flex items-center gap-3 mb-1">
+                <span class={`text-xs font-bold uppercase tracking-widest px-2 py-1 rounded-full ${c.badge}`}>
+                  {tier.label}
+                </span>
+              </div>
+              <p class="text-gray-600 text-sm mt-2">{tier.description}</p>
+            </div>
+
+            <!-- Cards -->
+            <div class="space-y-5">
+              {tier.parts.map((part) => (
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                  <!-- Card header -->
+                  <button
+                    class="w-full text-left px-6 py-4 flex items-center justify-between group pos-toggle"
+                    aria-expanded="false"
+                  >
+                    <div class="flex items-center gap-3">
+                      <h3 class={`text-lg font-bold ${c.header}`}>{part.name}</h3>
+                      <span class="text-xs font-mono text-gray-400 bg-gray-100 px-2 py-0.5 rounded">{part.abbreviation}</span>
+                    </div>
+                    <span class="text-gray-400 group-hover:text-gray-600 transition-colors text-xl leading-none pos-chevron">+</span>
+                  </button>
+
+                  <!-- Card body (hidden by default) -->
+                  <div class="pos-body hidden px-6 pb-6">
+                    <!-- Definition -->
+                    <p class="text-gray-700 mb-4">{part.definition}</p>
+
+                    <!-- Subtypes -->
+                    <div class={`rounded-xl ${c.subtypeBg} border ${c.border} p-4 mb-4`}>
+                      <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3">Types &amp; subtypes</p>
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {part.subtypes.map((sub) => (
+                          <div>
+                            <span class="font-semibold text-sm text-gray-800">{sub.name}: </span>
+                            <span class="text-sm text-gray-600 italic">{sub.example}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <!-- Example sentence -->
+                    <div class={`border-l-4 ${c.accent} pl-4 mb-4`}>
+                      <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Example</p>
+                      <p class="text-gray-700" set:html={part.example} />
+                    </div>
+
+                    <!-- Tip -->
+                    <div class="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                      <p class="text-xs font-semibold uppercase tracking-wide text-amber-600 mb-1">Tip</p>
+                      <p class="text-sm text-amber-900">{part.tip}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        );
+      })}
+    </main>
+
+    <script>
+      document.querySelectorAll<HTMLButtonElement>('.pos-toggle').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const card = btn.closest('.bg-white')!;
+          const body = card.querySelector<HTMLElement>('.pos-body')!;
+          const chevron = btn.querySelector<HTMLElement>('.pos-chevron')!;
+          const isOpen = !body.classList.contains('hidden');
+
+          body.classList.toggle('hidden', isOpen);
+          chevron.textContent = isOpen ? '+' : '−';
+          btn.setAttribute('aria-expanded', String(!isOpen));
+        });
+      });
+    </script>
+  </body>
+</html>
