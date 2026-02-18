@@ -3,7 +3,8 @@ import { seedIfEmpty } from '../lib/seed.js';
 import { getDueWords } from '../lib/db.js';
 import Flashcard from '../components/Flashcard.astro';
 import Nav from '../components/Nav.astro';
-import Footer from '../components/Footer.astro';
+import Head from '../components/Head.astro';
+import Foot from '../components/Foot.astro';
 
 seedIfEmpty();
 
@@ -22,14 +23,7 @@ const totalCards = dueWords.length;
 const currentWord = dueWords[cardIndex];
 ---
 
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>VocabUp — Study Session</title>
-  </head>
-  <body class="bg-gray-50 min-h-screen font-sans">
+<Head title="VocabUp — Study Session" />
     <!-- Nav -->
     <Nav/>
 
@@ -103,6 +97,4 @@ const currentWord = dueWords[cardIndex];
         </div>
       )}
     </main>
-    <Footer/>
-  </body>
-</html>
+<Foot />

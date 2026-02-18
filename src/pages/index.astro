@@ -3,7 +3,8 @@ import { seedIfEmpty } from '../lib/seed.js';
 import { getUserStats, countDueWords, getMasteryBreakdown, countUnlearnedWords } from '../lib/db.js';
 import StatsBar from '../components/StatsBar.astro';
 import Nav from '../components/Nav.astro';
-import Footer from '../components/Footer.astro';
+import Head from '../components/Head.astro';
+import Foot from '../components/Foot.astro';
 
 seedIfEmpty();
 
@@ -15,14 +16,7 @@ const hour = new Date().getHours();
 const greeting = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
 ---
 
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>VocabUp — Dashboard</title>
-  </head>
-  <body class="bg-gray-50 min-h-screen font-sans">
+<Head title="VocabUp — Dashboard" />
     <Nav/>
 
     <!-- Toast -->
@@ -137,7 +131,6 @@ const greeting = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
         </div>
       </div>
     </main>
-    <Footer/>
 
     <script>
       let toastTimer: ReturnType<typeof setTimeout> | null = null;
@@ -180,5 +173,4 @@ const greeting = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
       (window as any).addWords = addWords;
       (window as any).addByLevel = addByLevel;
     </script>
-  </body>
-</html>
+<Foot />

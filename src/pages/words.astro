@@ -5,7 +5,8 @@ import {todayISO} from '../lib/srs.js';
 import {LEVEL_LABELS, LEVEL_COLORS} from '../lib/levels.js';
 import WordRow from '../components/WordRow.astro';
 import Nav from '../components/Nav.astro';
-import Footer from '../components/Footer.astro';
+import Head from '../components/Head.astro';
+import Foot from '../components/Foot.astro';
 
 seedIfEmpty();
 
@@ -31,14 +32,7 @@ const wordsWithProgress = db.prepare(`
 }>;
 ---
 
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>VocabUp — Browse Words</title>
-</head>
-<body class="bg-gray-50 min-h-screen font-sans">
+<Head title="VocabUp — Browse Words" />
     <Nav/>
 
     <main class="max-w-5xl mx-auto px-6 py-10">
@@ -132,8 +126,6 @@ const wordsWithProgress = db.prepare(`
             <div id="no-results" class="hidden py-12 text-center text-gray-400">No words match your search.</div>
         </div>
     </main>
-
-    <Footer/>
 
     <!-- Detail modal -->
     <div id="modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
@@ -385,5 +377,4 @@ const wordsWithProgress = db.prepare(`
             th.addEventListener('click', () => applySort(th.dataset.sort));
         });
     </script>
-</body>
-</html>
+<Foot />

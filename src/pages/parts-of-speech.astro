@@ -1,7 +1,8 @@
 ---
 // No DB needed — this is a pure reference page
 import Nav from '../components/Nav.astro';
-import Footer from '../components/Footer.astro';
+import Head from '../components/Head.astro';
+import Foot from '../components/Foot.astro';
 
 const tiers = [
   {
@@ -346,14 +347,7 @@ const colorMap: Record<string, { bg: string; border: string; badge: string; head
 };
 ---
 
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>VocabUp — Parts of Speech</title>
-  </head>
-  <body class="bg-gray-50 min-h-screen font-sans">
+<Head title="VocabUp — Parts of Speech" />
     <Nav/>
 
     <main class="max-w-4xl mx-auto px-6 py-10">
@@ -447,7 +441,6 @@ const colorMap: Record<string, { bg: string; border: string; badge: string; head
         );
       })}
     </main>
-    <Footer/>
 
     <script>
       document.querySelectorAll<HTMLButtonElement>('.pos-toggle').forEach((btn) => {
@@ -463,5 +456,4 @@ const colorMap: Record<string, { bg: string; border: string; badge: string; head
         });
       });
     </script>
-  </body>
-</html>
+<Foot />
