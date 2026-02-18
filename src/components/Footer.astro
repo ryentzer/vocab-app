@@ -1,0 +1,17 @@
+---
+const year = new Date().getFullYear();
+---
+<footer class="bg-white border-t border-gray-200 mt-16">
+  <div class="max-w-4xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+    <p class="text-sm text-gray-400">
+      &copy; {year} <span class="font-semibold text-indigo-600">VocabUp</span>. All rights reserved.
+    </p>
+    <nav class="flex gap-5 text-sm text-gray-500 font-medium">
+      <a href="/" class="hover:text-indigo-600 transition-colors">Dashboard</a>
+      <a href="/study" class="hover:text-indigo-600 transition-colors">Study</a>
+      <a href="/word-of-the-day" class="hover:text-indigo-600 transition-colors">Word of the Day</a>
+      <a href="/words" class="hover:text-indigo-600 transition-colors">Word List</a>
+      <a href="/parts-of-speech" class="hover:text-indigo-600 transition-colors">Parts of Speech</a>
+    </nav>
+  </div>
+</footer>

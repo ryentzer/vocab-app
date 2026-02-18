@@ -1,5 +1,7 @@
 ---
 // No DB needed — this is a pure reference page
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
 
 const tiers = [
   {
@@ -352,18 +354,7 @@ const colorMap: Record<string, { bg: string; border: string; badge: string; head
     <title>VocabUp — Parts of Speech</title>
   </head>
   <body class="bg-gray-50 min-h-screen font-sans">
-    <nav class="bg-white border-b border-gray-200 px-6 py-4">
-      <div class="max-w-4xl mx-auto flex items-center justify-between">
-        <a href="/" class="text-xl font-bold text-indigo-600 tracking-tight">VocabUp</a>
-        <div class="flex gap-5 text-sm font-medium text-gray-600 flex-wrap">
-          <a href="/" class="hover:text-indigo-600 transition-colors">Dashboard</a>
-          <a href="/study" class="hover:text-indigo-600 transition-colors">Study</a>
-          <a href="/word-of-the-day" class="hover:text-indigo-600 transition-colors">Word of the Day</a>
-          <a href="/words" class="hover:text-indigo-600 transition-colors">Browse</a>
-          <a href="/parts-of-speech" class="text-indigo-600">Parts of Speech</a>
-        </div>
-      </div>
-    </nav>
+    <Nav/>
 
     <main class="max-w-4xl mx-auto px-6 py-10">
       <div class="mb-8">
@@ -456,6 +447,7 @@ const colorMap: Record<string, { bg: string; border: string; badge: string; head
         );
       })}
     </main>
+    <Footer/>
 
     <script>
       document.querySelectorAll<HTMLButtonElement>('.pos-toggle').forEach((btn) => {
