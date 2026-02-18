@@ -15,7 +15,7 @@ const db = getDb();
 
 const wordsWithProgress = db.prepare(`
     SELECT w.*,
-           COALESCE(p.mastery, 0) as                                              mastery,
+           COALESCE(p.mastery, 0)                                              as mastery,
            CASE WHEN p.id IS NOT NULL AND p.next_review <= ? THEN 1 ELSE 0 END as in_queue
     FROM words w
              LEFT JOIN progress p ON p.word_id = w.id
@@ -32,349 +32,364 @@ const wordsWithProgress = db.prepare(`
 }>;
 ---
 
-<Head title="VocabUp — Browse Words" />
-    <Nav/>
+<Head title="VocabUp — Browse Words"/>
+<Nav/>
 
-    <main class="max-w-5xl mx-auto px-6 py-10">
-        <div class="flex items-center justify-between mb-6">
-            <h1 class="text-3xl font-bold text-gray-900">Browse Words</h1>
-            <span class="text-sm text-gray-500">{wordsWithProgress.length} words</span>
+<main class="max-w-5xl mx-auto px-6 py-10">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-3xl font-bold text-gray-900">Browse Words</h1>
+        <span class="text-sm text-gray-500">{wordsWithProgress.length} words</span>
+    </div>
+
+    <!-- Search + filter bar -->
+    <div class="flex flex-col sm:flex-row gap-3 mb-6">
+        <div class="flex-1">
+            <label for="search-input" class="sr-only">Search words or definitions</label>
+            <input
+                    id="search-input"
+                    type="text"
+                    placeholder="Search words or definitions…"
+                    class="w-full px-4 py-2 rounded-xl border border-gray-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 text-sm"
+            />
         </div>
-
-        <!-- Search + filter bar -->
-        <div class="flex flex-col sm:flex-row gap-3 mb-6">
-            <div class="flex-1">
-                <label for="search-input" class="sr-only">Search words or definitions</label>
-                <input
-                        id="search-input"
-                        type="text"
-                        placeholder="Search words or definitions…"
-                        class="w-full px-4 py-2 rounded-xl border border-gray-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 text-sm"
-                />
-            </div>
-            <div>
-                <label for="level-filter" class="sr-only">Filter by level</label>
-                <select
-                        id="level-filter"
-                        class="px-4 py-2 rounded-xl border border-gray-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 text-sm"
-                >
-                    <option value="">All levels</option>
-                    <option value="grade_6_8">Grades 6–8</option>
-                    <option value="grade_9_10">Grades 9–10</option>
-                    <option value="sat">SAT / 11–12</option>
-                    <option value="gre">GRE</option>
-                </select>
-            </div>
-            <div>
-                <label for="mastery-filter" class="sr-only">Filter by mastery</label>
-                <select
-                        id="mastery-filter"
-                        class="px-4 py-2 rounded-xl border border-gray-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 text-sm"
-                >
-                    <option value="">All mastery</option>
-                    <option value="0">New</option>
-                    <option value="1-4">Learning</option>
-                    <option value="5">Mastered</option>
-                </select>
-            </div>
-        </div>
-
-        <!-- Toast notification -->
-        <div id="toast"
-             class="hidden fixed bottom-6 right-6 bg-indigo-600 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-medium z-50 transition-all">
-            Added to today's study queue!
-        </div>
-
-        <!-- Table -->
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <table class="w-full">
-                <thead class="bg-gray-50 border-b border-gray-100">
-                <tr>
-                    <th data-sort="word" class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wide text-gray-500 cursor-pointer select-none hover:text-indigo-600">
-                        <span class="inline-flex items-center gap-1">Word<span class="sort-indicator text-gray-400"><i class="fa-solid fa-sort"></i></span></span>
-                    </th>
-                    <th data-sort="pos" class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wide text-gray-500 cursor-pointer select-none hover:text-indigo-600 hidden md:table-cell">
-                        <span class="inline-flex items-center gap-1">POS<span class="sort-indicator text-gray-400"><i class="fa-solid fa-sort"></i></span></span>
-                    </th>
-                    <th class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                        Definition
-                    </th>
-                    <th data-sort="level" class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wide text-gray-500 cursor-pointer select-none hover:text-indigo-600">
-                        <span class="inline-flex items-center gap-1">Level<span class="sort-indicator text-gray-400"><i class="fa-solid fa-sort"></i></span></span>
-                    </th>
-                    <th data-sort="mastery" class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wide text-gray-500 cursor-pointer select-none hover:text-indigo-600">
-                        <span class="inline-flex items-center gap-1">Mastery<span class="sort-indicator text-gray-400"><i class="fa-solid fa-sort"></i></span></span>
-                    </th>
-                    <th class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wide text-gray-500">Study
-                    </th>
-                </tr>
-                </thead>
-                <tbody id="words-body">
-                {wordsWithProgress.map((w) => (
-                        <WordRow
-                                id={w.id}
-                                word={w.word}
-                                definition={w.definition}
-                                partOfSpeech={w.part_of_speech}
-                                level={w.level}
-                                mastery={w.mastery}
-                                inQueue={w.in_queue === 1}
-                        />
-                ))}
-                </tbody>
-            </table>
-            <div id="no-results" class="hidden py-12 text-center text-gray-400">No words match your search.</div>
-        </div>
-    </main>
-
-    <!-- Detail modal -->
-    <div id="modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-8 relative">
-            <button
-                    onclick="closeModal()"
-                    class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl leading-none"
-            >&times;
-            </button>
-            <div class="flex items-center gap-3 mb-2">
-                <p id="modal-pos" class="text-sm text-gray-400 italic"></p>
-                <span id="modal-level" class="text-xs font-semibold px-2 py-1 rounded-full"></span>
-            </div>
-            <h2 id="modal-word" class="text-4xl font-bold text-indigo-700 mb-4"></h2>
-            <p id="modal-def" class="text-lg text-gray-700 leading-relaxed mb-4"></p>
-            <p id="modal-example" class="text-gray-500 italic border-l-4 border-indigo-300 pl-4 text-sm hidden"></p>
-            <button
-                    id="modal-queue-btn"
-                    class="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-xl transition-colors hidden"
-                    onclick="queueFromModal()"
+        <div>
+            <label for="level-filter" class="sr-only">Filter by level</label>
+            <select
+                    id="level-filter"
+                    class="px-4 py-2 rounded-xl border border-gray-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 text-sm"
             >
-                + Add to Today's Study Queue
-            </button>
+                <option value="">All levels</option>
+                <option value="grade_6_8">Grades 6–8</option>
+                <option value="grade_9_10">Grades 9–10</option>
+                <option value="sat">SAT / 11–12</option>
+                <option value="gre">GRE</option>
+            </select>
+        </div>
+        <div>
+            <label for="mastery-filter" class="sr-only">Filter by mastery</label>
+            <select
+                    id="mastery-filter"
+                    class="px-4 py-2 rounded-xl border border-gray-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 text-sm"
+            >
+                <option value="">All mastery</option>
+                <option value="0">New</option>
+                <option value="1-4">Learning</option>
+                <option value="5">Mastered</option>
+            </select>
         </div>
     </div>
 
-    <script define:vars={{LEVEL_LABELS, LEVEL_COLORS}}>
-        // ── Search & filter ────────────────────────────────────────────────────
-        const searchInput = document.getElementById('search-input');
-        const levelFilter = document.getElementById('level-filter');
-        const masteryFilter = document.getElementById('mastery-filter');
-        const tbody = document.getElementById('words-body');
-        const noResults = document.getElementById('no-results');
+    <!-- Toast notification -->
+    <div id="toast"
+         class="hidden fixed bottom-6 right-6 bg-indigo-600 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-medium z-50 transition-all">
+        Added to today's study queue!
+    </div>
 
-        function filterRows() {
-            const q = searchInput.value.toLowerCase();
-            const level = levelFilter.value;
-            const mastery = masteryFilter.value;
-            let visible = 0;
+    <!-- Table -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <table class="w-full">
+            <thead class="bg-gray-50 border-b border-gray-100">
+            <tr>
+                <th data-sort="word"
+                    class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wide text-gray-500 cursor-pointer select-none hover:text-indigo-600">
+                    <span class="inline-flex items-center gap-1">Word<span class="sort-indicator text-gray-400"><i
+                            class="fa-solid fa-sort-down"></i></span></span>
+                </th>
+                <th data-sort="pos"
+                    class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wide text-gray-500 cursor-pointer select-none hover:text-indigo-600 hidden md:table-cell">
+                    <span class="inline-flex items-center gap-1">POS<span class="sort-indicator text-gray-400"><i
+                            class="fa-solid fa-sort"></i></span></span>
+                </th>
+                <th class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Definition
+                </th>
+                <th data-sort="level"
+                    class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wide text-gray-500 cursor-pointer select-none hover:text-indigo-600">
+                    <span class="inline-flex items-center gap-1">Level<span class="sort-indicator text-gray-400"><i
+                            class="fa-solid fa-sort"></i></span></span>
+                </th>
+                <th data-sort="mastery"
+                    class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wide text-gray-500 cursor-pointer select-none hover:text-indigo-600">
+                    <span class="inline-flex items-center gap-1">Mastery<span class="sort-indicator text-gray-400"><i
+                            class="fa-solid fa-sort"></i></span></span>
+                </th>
+                <th class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wide text-gray-500">Study
+                </th>
+            </tr>
+            </thead>
+            <tbody id="words-body">
+            {wordsWithProgress.map((w) => (
+                    <WordRow
+                            id={w.id}
+                            word={w.word}
+                            definition={w.definition}
+                            partOfSpeech={w.part_of_speech}
+                            level={w.level}
+                            mastery={w.mastery}
+                            inQueue={w.in_queue === 1}
+                    />
+            ))}
+            </tbody>
+        </table>
+        <div id="no-results" class="hidden py-12 text-center text-gray-400">No words match your search.</div>
+    </div>
+</main>
 
-            tbody.querySelectorAll('tr.word-row').forEach((row) => {
-                const word = (row.dataset.word ?? '').toLowerCase();
-                const def = (row.dataset.definition ?? '').toLowerCase();
-                const rowLevel = row.dataset.level ?? '';
-                const rowMastery = parseInt(row.dataset.mastery ?? '0', 10);
+<!-- Detail modal -->
+<div id="modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-8 relative">
+        <button
+                onclick="closeModal()"
+                class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl leading-none"
+        >&times;
+        </button>
+        <div class="flex items-center gap-3 mb-2">
+            <p id="modal-pos" class="text-sm text-gray-400 italic"></p>
+            <span id="modal-level" class="text-xs font-semibold px-2 py-1 rounded-full"></span>
+        </div>
+        <h2 id="modal-word" class="text-4xl font-bold text-indigo-700 mb-4"></h2>
+        <p id="modal-def" class="text-lg text-gray-700 leading-relaxed mb-4"></p>
+        <p id="modal-example" class="text-gray-500 italic border-l-4 border-indigo-300 pl-4 text-sm hidden"></p>
+        <button
+                id="modal-queue-btn"
+                class="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-xl transition-colors hidden"
+                onclick="queueFromModal()"
+        >
+            + Add to Today's Study Queue
+        </button>
+    </div>
+</div>
 
-                const matchQ = !q || word.includes(q) || def.includes(q);
-                const matchLevel = !level || rowLevel === level;
-                let matchMastery = true;
-                if (mastery === '0') matchMastery = rowMastery === 0;
-                else if (mastery === '1-4') matchMastery = rowMastery >= 1 && rowMastery <= 4;
-                else if (mastery === '5') matchMastery = rowMastery === 5;
+<script define:vars={{LEVEL_LABELS, LEVEL_COLORS}}>
+    // ── Search & filter ────────────────────────────────────────────────────
+    const searchInput = document.getElementById('search-input');
+    const levelFilter = document.getElementById('level-filter');
+    const masteryFilter = document.getElementById('mastery-filter');
+    const tbody = document.getElementById('words-body');
+    const noResults = document.getElementById('no-results');
 
-                const show = matchQ && matchLevel && matchMastery;
-                row.style.display = show ? '' : 'none';
-                if (show) visible++;
-            });
+    function filterRows() {
+        const q = searchInput.value.toLowerCase();
+        const level = levelFilter.value;
+        const mastery = masteryFilter.value;
+        let visible = 0;
 
-            noResults.classList.toggle('hidden', visible > 0);
-        }
+        tbody.querySelectorAll('tr.word-row').forEach((row) => {
+            const word = (row.dataset.word ?? '').toLowerCase();
+            const def = (row.dataset.definition ?? '').toLowerCase();
+            const rowLevel = row.dataset.level ?? '';
+            const rowMastery = parseInt(row.dataset.mastery ?? '0', 10);
 
-        searchInput.addEventListener('input', filterRows);
-        levelFilter.addEventListener('change', filterRows);
-        masteryFilter.addEventListener('change', filterRows);
+            const matchQ = !q || word.includes(q) || def.includes(q);
+            const matchLevel = !level || rowLevel === level;
+            let matchMastery = true;
+            if (mastery === '0') matchMastery = rowMastery === 0;
+            else if (mastery === '1-4') matchMastery = rowMastery >= 1 && rowMastery <= 4;
+            else if (mastery === '5') matchMastery = rowMastery === 5;
 
-        // ── Toast ──────────────────────────────────────────────────────────────
-        let toastTimer = null;
-
-        function showToast(msg) {
-            const toast = document.getElementById('toast');
-            toast.textContent = msg;
-            toast.classList.remove('hidden');
-            clearTimeout(toastTimer);
-            toastTimer = setTimeout(() => toast.classList.add('hidden'), 2500);
-        }
-
-        // ── Queue button in table rows ─────────────────────────────────────────
-        tbody.addEventListener('click', async (e) => {
-            const btn = e.target.closest('.queue-btn');
-            if (btn) {
-                e.stopPropagation();
-                const wordId = parseInt(btn.dataset.wordId, 10);
-                btn.disabled = true;
-                btn.textContent = '…';
-
-                try {
-                    const res = await fetch('/api/queue', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({wordId}),
-                    });
-                    if (res.ok) {
-                        btn.textContent = '✓ Queued';
-                        btn.classList.remove('bg-indigo-100', 'hover:bg-indigo-200', 'text-indigo-700');
-                        btn.classList.add('bg-green-100', 'text-green-700', 'cursor-default');
-                        btn.dataset.inQueue = 'true';
-                        showToast('Added to today\'s study queue!');
-                    }
-                } catch {
-                    btn.disabled = false;
-                    btn.textContent = '+ Queue';
-                }
-                return;
-            }
-
-            // Row click → open modal
-            const row = e.target.closest('tr.word-row');
-            if (row) openModal(row);
+            const show = matchQ && matchLevel && matchMastery;
+            row.style.display = show ? '' : 'none';
+            if (show) visible++;
         });
 
-        // ── Modal ──────────────────────────────────────────────────────────────
-        const modal = document.getElementById('modal');
-        let modalWordId = null;
+        noResults.classList.toggle('hidden', visible > 0);
+    }
 
-        function openModal(row) {
-            const word = row.dataset.word ?? '';
-            const def = row.dataset.definition ?? '';
-            const pos = row.dataset.pos ?? '';
-            const level = row.dataset.level ?? '';
-            const inQueue = row.dataset.inQueue !== 'false';
-            modalWordId = parseInt(row.dataset.id, 10);
+    searchInput.addEventListener('input', filterRows);
+    levelFilter.addEventListener('change', filterRows);
+    masteryFilter.addEventListener('change', filterRows);
 
-            document.getElementById('modal-word').textContent = word;
-            document.getElementById('modal-pos').textContent = pos;
-            document.getElementById('modal-def').textContent = def;
+    // ── Toast ──────────────────────────────────────────────────────────────
+    let toastTimer = null;
 
-            const levelEl = document.getElementById('modal-level');
-            levelEl.textContent = LEVEL_LABELS[level] ?? level;
-            levelEl.className = `text-xs font-semibold px-2 py-1 rounded-full ${LEVEL_COLORS[level] ?? 'bg-gray-100 text-gray-600'}`;
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.classList.remove('hidden');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.add('hidden'), 2500);
+    }
 
-            const exEl = document.getElementById('modal-example');
-            exEl.classList.add('hidden');
-
-            const queueBtn = document.getElementById('modal-queue-btn');
-            const tableBtn = row.querySelector('.queue-btn');
-            if (tableBtn && tableBtn.dataset.inQueue === 'true') {
-                queueBtn.textContent = '✓ Already in Queue';
-                queueBtn.disabled = true;
-                queueBtn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
-                queueBtn.classList.add('bg-green-100', 'text-green-700');
-                queueBtn.classList.remove('text-white');
-            } else {
-                queueBtn.textContent = '+ Add to Today\'s Study Queue';
-                queueBtn.disabled = false;
-                queueBtn.classList.add('bg-indigo-600', 'hover:bg-indigo-700', 'text-white');
-                queueBtn.classList.remove('bg-green-100', 'text-green-700');
-            }
-            queueBtn.classList.remove('hidden');
-
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        }
-
-        async function queueFromModal() {
-            if (!modalWordId) return;
-            const btn = document.getElementById('modal-queue-btn');
+    // ── Queue button in table rows ─────────────────────────────────────────
+    tbody.addEventListener('click', async (e) => {
+        const btn = e.target.closest('.queue-btn');
+        if (btn) {
+            e.stopPropagation();
+            const wordId = parseInt(btn.dataset.wordId, 10);
             btn.disabled = true;
             btn.textContent = '…';
+
             try {
                 const res = await fetch('/api/queue', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({wordId: modalWordId}),
+                    body: JSON.stringify({wordId}),
                 });
                 if (res.ok) {
-                    btn.textContent = '✓ Added to Queue';
-                    btn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700', 'text-white');
-                    btn.classList.add('bg-green-100', 'text-green-700');
+                    btn.textContent = '✓ Queued';
+                    btn.classList.remove('bg-indigo-100', 'hover:bg-indigo-200', 'text-indigo-700');
+                    btn.classList.add('bg-green-100', 'text-green-700', 'cursor-default');
+                    btn.dataset.inQueue = 'true';
                     showToast('Added to today\'s study queue!');
-                    // Also update the row button
-                    const row = tbody.querySelector(`tr[data-id="${modalWordId}"]`);
-                    if (row) {
-                        const tableBtn = row.querySelector('.queue-btn');
-                        if (tableBtn) {
-                            tableBtn.textContent = '✓ Queued';
-                            tableBtn.disabled = true;
-                            tableBtn.dataset.inQueue = 'true';
-                            tableBtn.classList.remove('bg-indigo-100', 'hover:bg-indigo-200', 'text-indigo-700');
-                            tableBtn.classList.add('bg-green-100', 'text-green-700', 'cursor-default');
-                        }
-                    }
                 }
             } catch {
                 btn.disabled = false;
-                btn.textContent = '+ Add to Today\'s Study Queue';
+                btn.textContent = '+ Queue';
             }
+            return;
         }
 
-        function closeModal() {
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
+        // Row click → open modal
+        const row = e.target.closest('tr.word-row');
+        if (row) openModal(row);
+    });
+
+    // ── Modal ──────────────────────────────────────────────────────────────
+    const modal = document.getElementById('modal');
+    let modalWordId = null;
+
+    function openModal(row) {
+        const word = row.dataset.word ?? '';
+        const def = row.dataset.definition ?? '';
+        const pos = row.dataset.pos ?? '';
+        const level = row.dataset.level ?? '';
+        const inQueue = row.dataset.inQueue !== 'false';
+        modalWordId = parseInt(row.dataset.id, 10);
+
+        document.getElementById('modal-word').textContent = word;
+        document.getElementById('modal-pos').textContent = pos;
+        document.getElementById('modal-def').textContent = def;
+
+        const levelEl = document.getElementById('modal-level');
+        levelEl.textContent = LEVEL_LABELS[level] ?? level;
+        levelEl.className = `text-xs font-semibold px-2 py-1 rounded-full ${LEVEL_COLORS[level] ?? 'bg-gray-100 text-gray-600'}`;
+
+        const exEl = document.getElementById('modal-example');
+        exEl.classList.add('hidden');
+
+        const queueBtn = document.getElementById('modal-queue-btn');
+        const tableBtn = row.querySelector('.queue-btn');
+        if (tableBtn && tableBtn.dataset.inQueue === 'true') {
+            queueBtn.textContent = '✓ Already in Queue';
+            queueBtn.disabled = true;
+            queueBtn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+            queueBtn.classList.add('bg-green-100', 'text-green-700');
+            queueBtn.classList.remove('text-white');
+        } else {
+            queueBtn.textContent = '+ Add to Today\'s Study Queue';
+            queueBtn.disabled = false;
+            queueBtn.classList.add('bg-indigo-600', 'hover:bg-indigo-700', 'text-white');
+            queueBtn.classList.remove('bg-green-100', 'text-green-700');
         }
+        queueBtn.classList.remove('hidden');
 
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) closeModal();
-        });
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') closeModal();
-        });
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
 
-        window.closeModal = closeModal;
-        window.queueFromModal = queueFromModal;
-
-        // ── Column sorting ─────────────────────────────────────────────────────
-        const SVG_NEUTRAL = '<i class="fa-solid fa-sort"></i>';
-        const SVG_UP      = '<i class="fa-solid fa-chevron-up"></i>';
-        const SVG_DOWN    = '<i class="fa-solid fa-chevron-down"></i>';
-
-        const LEVEL_ORDER = { grade_6_8: 0, grade_9_10: 1, sat: 2, gre: 3 };
-        let sortCol = null;
-        let sortDir = 'asc';
-
-        function getSortValue(row, col) {
-            if (col === 'word') return (row.dataset.word ?? '').toLowerCase();
-            if (col === 'pos')  return (row.dataset.pos  ?? '').toLowerCase();
-            if (col === 'level') return LEVEL_ORDER[row.dataset.level] ?? 99;
-            if (col === 'mastery') return parseInt(row.dataset.mastery ?? '0', 10);
-        }
-
-        function applySort(col) {
-            sortDir = sortCol === col && sortDir === 'asc' ? 'desc' : 'asc';
-            sortCol = col;
-
-            const rows = Array.from(tbody.querySelectorAll('tr.word-row'));
-            rows.sort((a, b) => {
-                const va = getSortValue(a, col);
-                const vb = getSortValue(b, col);
-                if (va < vb) return sortDir === 'asc' ? -1 : 1;
-                if (va > vb) return sortDir === 'asc' ?  1 : -1;
-                return 0;
+    async function queueFromModal() {
+        if (!modalWordId) return;
+        const btn = document.getElementById('modal-queue-btn');
+        btn.disabled = true;
+        btn.textContent = '…';
+        try {
+            const res = await fetch('/api/queue', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({wordId: modalWordId}),
             });
-            rows.forEach(row => tbody.appendChild(row));
-
-            document.querySelectorAll('th[data-sort]').forEach(th => {
-                const indicator = th.querySelector('.sort-indicator');
-                if (th.dataset.sort === sortCol) {
-                    indicator.innerHTML = sortDir === 'asc' ? SVG_UP : SVG_DOWN;
-                    th.classList.add('text-indigo-600');
-                    th.classList.remove('text-gray-500');
-                } else {
-                    indicator.innerHTML = SVG_NEUTRAL;
-                    th.classList.remove('text-indigo-600');
-                    th.classList.add('text-gray-500');
+            if (res.ok) {
+                btn.textContent = '✓ Added to Queue';
+                btn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700', 'text-white');
+                btn.classList.add('bg-green-100', 'text-green-700');
+                showToast('Added to today\'s study queue!');
+                // Also update the row button
+                const row = tbody.querySelector(`tr[data-id="${modalWordId}"]`);
+                if (row) {
+                    const tableBtn = row.querySelector('.queue-btn');
+                    if (tableBtn) {
+                        tableBtn.textContent = '✓ Queued';
+                        tableBtn.disabled = true;
+                        tableBtn.dataset.inQueue = 'true';
+                        tableBtn.classList.remove('bg-indigo-100', 'hover:bg-indigo-200', 'text-indigo-700');
+                        tableBtn.classList.add('bg-green-100', 'text-green-700', 'cursor-default');
+                    }
                 }
-            });
+            }
+        } catch {
+            btn.disabled = false;
+            btn.textContent = '+ Add to Today\'s Study Queue';
         }
+    }
+
+    function closeModal() {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeModal();
+    });
+
+    window.closeModal = closeModal;
+    window.queueFromModal = queueFromModal;
+
+    // ── Column sorting ─────────────────────────────────────────────────────
+    const SVG_NEUTRAL = '<i class="fa-solid fa-sort"></i>';
+    const SVG_UP = '<i class="fa-solid fa-sort-up"></i>';
+    const SVG_DOWN = '<i class="fa-solid fa-sort-down"></i>';
+
+    const LEVEL_ORDER = {grade_6_8: 0, grade_9_10: 1, sat: 2, gre: 3};
+    let sortCol = null;
+    let sortDir = 'asc';
+
+    function getSortValue(row, col) {
+        if (col === 'word') return (row.dataset.word ?? '').toLowerCase();
+        if (col === 'pos') return (row.dataset.pos ?? '').toLowerCase();
+        if (col === 'level') return LEVEL_ORDER[row.dataset.level] ?? 99;
+        if (col === 'mastery') return parseInt(row.dataset.mastery ?? '0', 10);
+    }
+
+    function applySort(col) {
+        sortDir = sortCol === col && sortDir === 'asc' ? 'desc' : 'asc';
+        sortCol = col;
+
+        const rows = Array.from(tbody.querySelectorAll('tr.word-row'));
+        rows.sort((a, b) => {
+            const va = getSortValue(a, col);
+            const vb = getSortValue(b, col);
+            if (va < vb) return sortDir === 'asc' ? -1 : 1;
+            if (va > vb) return sortDir === 'asc' ? 1 : -1;
+            return 0;
+        });
+        rows.forEach(row => tbody.appendChild(row));
 
         document.querySelectorAll('th[data-sort]').forEach(th => {
-            th.addEventListener('click', () => applySort(th.dataset.sort));
+            const indicator = th.querySelector('.sort-indicator');
+            if (th.dataset.sort === sortCol) {
+                indicator.innerHTML = sortDir === 'asc' ? SVG_UP : SVG_DOWN;
+                th.classList.add('text-indigo-600');
+                th.classList.remove('text-gray-500');
+            } else {
+                indicator.innerHTML = SVG_NEUTRAL;
+                th.classList.remove('text-indigo-600');
+                th.classList.add('text-gray-500');
+            }
         });
-    </script>
-<Foot />
+    }
+
+    document.querySelectorAll('th[data-sort]').forEach(th => {
+        th.addEventListener('click', () => applySort(th.dataset.sort));
+    });
+
+    applySort('word');
+</script>
+
+<style is:global>
+    .sort-indicator .fa-sort-up   { transform: translateY(3px); }
+    .sort-indicator .fa-sort-down { transform: translateY(-3px); }
+</style>
+<Foot/>
