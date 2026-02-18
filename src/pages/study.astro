@@ -2,6 +2,8 @@
 import { seedIfEmpty } from '../lib/seed.js';
 import { getDueWords } from '../lib/db.js';
 import Flashcard from '../components/Flashcard.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
 
 seedIfEmpty();
 
@@ -29,17 +31,7 @@ const currentWord = dueWords[cardIndex];
   </head>
   <body class="bg-gray-50 min-h-screen font-sans">
     <!-- Nav -->
-    <nav class="bg-white border-b border-gray-200 px-6 py-4">
-      <div class="max-w-4xl mx-auto flex items-center justify-between">
-        <a href="/" class="text-xl font-bold text-indigo-600 tracking-tight">VocabUp</a>
-        <div class="flex gap-6 text-sm font-medium text-gray-600">
-          <a href="/" class="hover:text-indigo-600 transition-colors">Dashboard</a>
-          <a href="/study" class="text-indigo-600">Study</a>
-          <a href="/word-of-the-day" class="hover:text-indigo-600 transition-colors">Word of the Day</a>
-          <a href="/words" class="hover:text-indigo-600 transition-colors">Browse</a>
-        </div>
-      </div>
-    </nav>
+    <Nav/>
 
     <main class="max-w-2xl mx-auto px-6 py-12">
       {done ? (
@@ -111,5 +103,6 @@ const currentWord = dueWords[cardIndex];
         </div>
       )}
     </main>
+    <Footer/>
   </body>
 </html>
