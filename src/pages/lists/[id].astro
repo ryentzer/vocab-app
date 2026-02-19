@@ -1,0 +1,225 @@
+---
+import { getListById, getListWords, countDueWords } from '../../lib/db.js';
+import { todayISO } from '../../lib/srs.js';
+import { LEVEL_LABELS, LEVEL_COLORS } from '../../lib/levels.js';
+import Nav from '../../components/Nav.astro';
+import Head from '../../components/Head.astro';
+import Foot from '../../components/Foot.astro';
+
+const userId = Astro.locals.user!.id;
+const listId = parseInt(Astro.params.id ?? '', 10);
+
+if (isNaN(listId)) {
+  return Astro.redirect('/lists');
+}
+
+const list = getListById(listId, userId);
+if (!list) {
+  return Astro.redirect('/lists');
+}
+
+const words = getListWords(listId, userId);
+const today = todayISO();
+const dueInList = words.filter(w => w.next_review !== null && w.next_review <= today).length;
+const levelLabels = LEVEL_LABELS;
+const levelColors = LEVEL_COLORS;
+---
+
+<Head title={`VocabUp — ${list.name}`} />
+<Nav />
+
+<main class="max-w-4xl mx-auto px-6 py-10">
+  <!-- Header -->
+  <div class="mb-8">
+    <a href="/lists" class="text-sm text-indigo-600 hover:underline">← My Lists</a>
+    <div class="flex items-start justify-between mt-3">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900">{list.name}</h1>
+        {list.description && (
+          <p class="text-gray-500 mt-1">{list.description}</p>
+        )}
+        <p class="text-sm text-gray-400 mt-2">{words.length} word{words.length !== 1 ? 's' : ''}</p>
+      </div>
+      <div class="flex gap-2 shrink-0 ml-4">
+        <button
+          id="delete-btn"
+          class="text-sm text-red-500 hover:text-red-700 font-medium px-3 py-2 rounded-xl hover:bg-red-50 transition-colors"
+          onclick="deleteList()"
+        >
+          Delete List
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Study CTA -->
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+    <div>
+      {dueInList > 0 ? (
+        <p class="text-gray-700">
+          <strong class="text-indigo-600">{dueInList} word{dueInList !== 1 ? 's' : ''}</strong> from this list are due for review.
+        </p>
+      ) : words.length === 0 ? (
+        <p class="text-gray-500">Add words to this list to start studying.</p>
+      ) : (
+        <p class="text-gray-500">No words due from this list right now.</p>
+      )}
+    </div>
+    <div class="flex gap-3 flex-wrap">
+      {words.length > 0 && (
+        <button
+          id="queue-list-btn"
+          onclick="queueList()"
+          class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold px-4 py-2 rounded-xl text-sm transition-colors"
+        >
+          + Queue All for Today
+        </button>
+      )}
+      {dueInList > 0 && (
+        <a
+          href={`/study?listId=${list.id}`}
+          class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-5 py-2 rounded-xl text-sm transition-colors"
+        >
+          Study This List →
+        </a>
+      )}
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="hidden fixed bottom-6 right-6 bg-indigo-600 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-medium z-50">
+    Words queued for today!
+  </div>
+
+  <!-- Words table -->
+  {words.length > 0 ? (
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Words in this list</h2>
+        <a
+          href="/words"
+          class="text-sm text-indigo-600 hover:underline font-medium"
+        >
+          + Browse &amp; add more
+        </a>
+      </div>
+      <table class="w-full">
+        <thead class="bg-gray-50 border-b border-gray-100">
+          <tr>
+            <th class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wide text-gray-500">Word</th>
+            <th class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wide text-gray-500 hidden md:table-cell">POS</th>
+            <th class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wide text-gray-500">Definition</th>
+            <th class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wide text-gray-500">Mastery</th>
+            <th class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wide text-gray-500"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {words.map(w => (
+            <tr class="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+              <td class="py-3 px-4">
+                <div class="font-semibold text-gray-900">{w.word}</div>
+                {w.level && (
+                  <span class={`text-xs font-medium px-1.5 py-0.5 rounded-full ${levelColors[w.level] ?? 'bg-gray-100 text-gray-600'}`}>
+                    {levelLabels[w.level] ?? w.level}
+                  </span>
+                )}
+              </td>
+              <td class="py-3 px-4 text-sm text-gray-400 italic hidden md:table-cell">{w.part_of_speech}</td>
+              <td class="py-3 px-4 text-sm text-gray-600 max-w-xs truncate">{w.definition}</td>
+              <td class="py-3 px-4">
+                <div class="flex gap-0.5">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div class={`w-3 h-3 rounded-full ${i < w.mastery ? 'bg-indigo-500' : 'bg-gray-200'}`}></div>
+                  ))}
+                </div>
+              </td>
+              <td class="py-3 px-4">
+                <button
+                  class="remove-btn text-xs text-gray-400 hover:text-red-500 transition-colors"
+                  data-word-id={w.id}
+                  data-word={w.word}
+                  onclick={`removeWord(${w.id}, '${w.word.replace(/'/g, "\\'")}')`}
+                >
+                  Remove
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  ) : (
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
+      <i class="fa-solid fa-plus-circle text-4xl text-indigo-300 mb-4 block"></i>
+      <p class="text-gray-500 mb-4">This list has no words yet.</p>
+      <a href="/words" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2.5 rounded-xl transition-colors text-sm">
+        Browse Words to Add
+      </a>
+    </div>
+  )}
+</main>
+
+<script define:vars={{ listId: list.id, listName: list.name }}>
+  async function queueList() {
+    const btn = document.getElementById('queue-list-btn');
+    btn.disabled = true;
+    btn.textContent = '…';
+
+    try {
+      const res = await fetch('/api/queue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ listId }),
+      });
+      if (res.ok) {
+        const toast = document.getElementById('toast');
+        toast.classList.remove('hidden');
+        setTimeout(() => {
+          toast.classList.add('hidden');
+          window.location.reload();
+        }, 1800);
+      }
+    } catch {
+      btn.disabled = false;
+      btn.textContent = '+ Queue All for Today';
+    }
+  }
+
+  async function removeWord(wordId, wordName) {
+    if (!confirm(`Remove "${wordName}" from this list?`)) return;
+
+    try {
+      const res = await fetch(`/api/lists/${listId}/words`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wordId }),
+      });
+      if (res.ok) {
+        window.location.reload();
+      }
+    } catch {
+      alert('Failed to remove word. Please try again.');
+    }
+  }
+
+  async function deleteList() {
+    if (!confirm(`Delete the list "${listName}"? This cannot be undone.`)) return;
+
+    try {
+      const res = await fetch(`/api/lists/${listId}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        window.location.href = '/lists';
+      }
+    } catch {
+      alert('Failed to delete list. Please try again.');
+    }
+  }
+
+  window.queueList = queueList;
+  window.removeWord = removeWord;
+  window.deleteList = deleteList;
+</script>
+
+<Foot />

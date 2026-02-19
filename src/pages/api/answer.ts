@@ -1,9 +1,10 @@
 import type { APIRoute } from 'astro';
-import { getDb, getProgressByWordId, updateProgress } from '../../lib/db.js';
+import { getDb, updateProgress } from '../../lib/db.js';
 import { computeSRS } from '../../lib/srs.js';
 
-export const POST: APIRoute = async ({ request }) => {
-  let body: { progressId: number; quality: 0 | 2 | 3 | 5 };
+export const POST: APIRoute = async ({ request, locals }) => {
+  const userId = locals.user!.id;
+  let body: { progressId: number; quality: 0 | 2 | 3 | 5; listId?: number };
 
   try {
     body = await request.json();
@@ -11,17 +12,19 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(JSON.stringify({ error: 'Invalid JSON' }), { status: 400 });
   }
 
-  const { progressId, quality } = body;
+  const { progressId, quality, listId } = body;
 
   if (typeof progressId !== 'number' || ![0, 2, 3, 5].includes(quality)) {
     return new Response(JSON.stringify({ error: 'Invalid parameters' }), { status: 400 });
   }
 
   const db = getDb();
+  // Ownership check: ensure this progress row belongs to the logged-in user
   const progress = db
-    .prepare('SELECT * FROM progress WHERE id = ?')
-    .get(progressId) as {
+    .prepare('SELECT * FROM progress WHERE id = ? AND user_id = ?')
+    .get(progressId, userId) as {
     id: number;
+    user_id: number;
     word_id: number;
     mastery: number;
     ease_factor: number;
@@ -48,19 +51,17 @@ export const POST: APIRoute = async ({ request }) => {
     correct,
   );
 
-  // Store session progress in a temporary cookie-based counter
-  // We'll handle session totals via URL params on the session end route
-  // Return next card URL
   const url = new URL(request.url);
   const currentCard = parseInt(url.searchParams.get('card') ?? '0', 10);
   const reviewed = parseInt(url.searchParams.get('reviewed') ?? '0', 10) + 1;
   const correctCount = parseInt(url.searchParams.get('correct') ?? '0', 10) + (correct ? 1 : 0);
 
-  // We embed session state in the response so the client can build the next URL
+  const listParam = listId ? `&listId=${listId}` : '';
+
   return new Response(
     JSON.stringify({
       ok: true,
-      nextUrl: `/api/session?card=${currentCard}&reviewed=${reviewed}&correct=${correctCount}&quality=${quality}`,
+      nextUrl: `/api/session?card=${currentCard}&reviewed=${reviewed}&correct=${correctCount}&quality=${quality}${listParam}`,
     }),
     {
       status: 200,
