@@ -1,6 +1,6 @@
 ---
 import { seedIfEmpty } from '../lib/seed.js';
-import { getDueWords } from '../lib/db.js';
+import { getDueWords, getDueWordsForList, getListById } from '../lib/db.js';
 import Flashcard from '../components/Flashcard.astro';
 import Nav from '../components/Nav.astro';
 import Head from '../components/Head.astro';
@@ -8,6 +8,7 @@ import Foot from '../components/Foot.astro';
 
 seedIfEmpty();
 
+const userId = Astro.locals.user!.id;
 const url = new URL(Astro.request.url);
 const cardIndexParam = url.searchParams.get('card');
 const cardIndex = cardIndexParam ? parseInt(cardIndexParam, 10) : 0;
@@ -18,7 +19,15 @@ const reviewed = parseInt(url.searchParams.get('reviewed') ?? '0', 10);
 const correct = parseInt(url.searchParams.get('correct') ?? '0', 10);
 const streak = parseInt(url.searchParams.get('streak') ?? '0', 10);
 
-const dueWords = getDueWords(20);
+// Optional list context
+const listIdParam = url.searchParams.get('listId');
+const listId = listIdParam ? parseInt(listIdParam, 10) : null;
+const list = listId ? getListById(listId, userId) : null;
+
+const dueWords = listId
+  ? getDueWordsForList(userId, listId, 20)
+  : getDueWords(userId, 20);
+
 const totalCards = dueWords.length;
 const currentWord = dueWords[cardIndex];
 ---
@@ -50,7 +59,15 @@ const currentWord = dueWords[cardIndex];
             </div>
           </div>
 
-          <div class="flex gap-4 justify-center">
+          <div class="flex gap-4 justify-center flex-wrap">
+            {list && (
+              <a
+                href={`/lists/${list.id}`}
+                class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold px-6 py-3 rounded-xl transition-colors"
+              >
+                ← Back to List
+              </a>
+            )}
             <a
               href="/"
               class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
@@ -70,15 +87,32 @@ const currentWord = dueWords[cardIndex];
         <div class="text-center">
           <div class="text-6xl mb-6">✅</div>
           <h1 class="text-3xl font-bold text-gray-900 mb-2">Nothing due!</h1>
-          <p class="text-gray-500 mb-8">You're all caught up. Check back tomorrow for more reviews.</p>
-          <a href="/" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-3 rounded-xl transition-colors">
-            Back to Dashboard
-          </a>
+          {list ? (
+            <p class="text-gray-500 mb-8">No words due from <strong>{list.name}</strong>. Add words to the queue or check back tomorrow.</p>
+          ) : (
+            <p class="text-gray-500 mb-8">You're all caught up. Check back tomorrow for more reviews.</p>
+          )}
+          <div class="flex gap-4 justify-center flex-wrap">
+            {list && (
+              <a href={`/lists/${list.id}`} class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold px-6 py-3 rounded-xl transition-colors">
+                ← Back to List
+              </a>
+            )}
+            <a href="/" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-3 rounded-xl transition-colors">
+              Back to Dashboard
+            </a>
+          </div>
         </div>
       ) : currentWord ? (
         <!-- Flashcard -->
         <>
-          <h1 class="text-2xl font-bold text-gray-800 mb-6 text-center">Study Session</h1>
+          <h1 class="text-2xl font-bold text-gray-800 mb-1 text-center">Study Session</h1>
+          {list && (
+            <p class="text-center text-sm text-indigo-500 mb-6">
+              <a href={`/lists/${list.id}`} class="hover:underline">← {list.name}</a>
+            </p>
+          )}
+          {!list && <div class="mb-6"></div>}
           <Flashcard
             wordId={currentWord.id}
             progressId={currentWord.progress_id!}
@@ -88,6 +122,7 @@ const currentWord = dueWords[cardIndex];
             example={currentWord.example}
             cardIndex={cardIndex}
             totalCards={totalCards}
+            listId={listId}
           />
         </>
       ) : (

@@ -54,20 +54,30 @@ const truncatedDef = definition.length > 80 ? definition.slice(0, 80) + '…' : 
       {masteryLabel}
     </span>
   </td>
-  <td class="py-3 px-4" onclick="event.stopPropagation()">
-    <button
-      class="queue-btn text-sm font-medium px-3 py-1 rounded-lg transition-colors"
-      class:list={[
-        inQueue
-          ? 'bg-green-100 text-green-700 cursor-default'
-          : 'bg-indigo-100 hover:bg-indigo-200 text-indigo-700',
-      ]}
-      data-word-id={id}
-      data-in-queue={inQueue ? 'true' : 'false'}
-      disabled={inQueue}
-      title={inQueue ? 'Already in today\'s queue' : 'Add to today\'s study queue'}
-    >
-      {inQueue ? '✓ Queued' : '+ Queue'}
-    </button>
+  <td class="py-3 px-4">
+    <div class="flex items-center gap-2">
+      <button
+        class="queue-btn text-sm font-medium px-3 py-1 rounded-lg transition-colors whitespace-nowrap"
+        class:list={[
+          inQueue
+            ? 'bg-green-100 text-green-700 cursor-default'
+            : 'bg-indigo-100 hover:bg-indigo-200 text-indigo-700',
+        ]}
+        data-word-id={id}
+        data-in-queue={inQueue ? 'true' : 'false'}
+        disabled={inQueue}
+        title={inQueue ? 'Already in today\'s queue' : 'Add to today\'s study queue'}
+      >
+        {inQueue ? '✓ Queued' : '+ Queue'}
+      </button>
+      <button
+        class="add-list-btn text-sm font-medium px-3 py-1 rounded-lg transition-colors whitespace-nowrap bg-gray-100 hover:bg-gray-200 text-gray-600"
+        data-word-id={id}
+        data-word={word}
+        title="Add to a list"
+      >
+        + List
+      </button>
+    </div>
   </td>
 </tr>

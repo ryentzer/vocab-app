@@ -9,12 +9,14 @@ import Foot from '../components/Foot.astro';
 
 seedIfEmpty();
 
+const userId = Astro.locals.user!.id;
+
 // Handle "Add to queue" POST
 if (Astro.request.method === 'POST') {
   const formData = await Astro.request.formData();
   const wordId = parseInt(formData.get('wordId') as string, 10);
   if (!isNaN(wordId)) {
-    upsertProgress(wordId, todayISO());
+    upsertProgress(userId, wordId, todayISO());
   }
   return Astro.redirect('/word-of-the-day?added=1');
 }

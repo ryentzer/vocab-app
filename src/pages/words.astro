@@ -1,6 +1,6 @@
 ---
 import {seedIfEmpty} from '../lib/seed.js';
-import {getDb} from '../lib/db.js';
+import {getDb, getLists} from '../lib/db.js';
 import {todayISO} from '../lib/srs.js';
 import {LEVEL_LABELS, LEVEL_COLORS} from '../lib/levels.js';
 import WordRow from '../components/WordRow.astro';
@@ -10,6 +10,7 @@ import Foot from '../components/Foot.astro';
 
 seedIfEmpty();
 
+const userId = Astro.locals.user!.id;
 const today = todayISO();
 const db = getDb();
 
@@ -18,9 +19,9 @@ const wordsWithProgress = db.prepare(`
            COALESCE(p.mastery, 0)                                              as mastery,
            CASE WHEN p.id IS NOT NULL AND p.next_review <= ? THEN 1 ELSE 0 END as in_queue
     FROM words w
-             LEFT JOIN progress p ON p.word_id = w.id
+             LEFT JOIN progress p ON p.word_id = w.id AND p.user_id = ?
     ORDER BY w.word
-`).all(today) as Array<{
+`).all(today, userId) as Array<{
     id: number;
     word: string;
     definition: string;
@@ -30,6 +31,8 @@ const wordsWithProgress = db.prepare(`
     mastery: number;
     in_queue: number;
 }>;
+
+const userLists = getLists(userId);
 ---
 
 <Head title="VocabUp — Browse Words"/>
@@ -82,7 +85,6 @@ const wordsWithProgress = db.prepare(`
     <!-- Toast notification -->
     <div id="toast"
          class="hidden fixed bottom-6 right-6 bg-indigo-600 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-medium z-50 transition-all">
-        Added to today's study queue!
     </div>
 
     <!-- Table -->
@@ -113,8 +115,7 @@ const wordsWithProgress = db.prepare(`
                     <span class="inline-flex items-center gap-1">Mastery<span class="sort-indicator text-gray-400"><i
                             class="fa-solid fa-sort"></i></span></span>
                 </th>
-                <th class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wide text-gray-500">Study
-                </th>
+                <th class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wide text-gray-500">Actions</th>
             </tr>
             </thead>
             <tbody id="words-body">
@@ -135,14 +136,13 @@ const wordsWithProgress = db.prepare(`
     </div>
 </main>
 
-<!-- Detail modal -->
-<div id="modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
+<!-- Word detail modal -->
+<div id="modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-40 p-4">
     <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-8 relative">
         <button
                 onclick="closeModal()"
                 class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl leading-none"
-        >&times;
-        </button>
+        >&times;</button>
         <div class="flex items-center gap-3 mb-2">
             <p id="modal-pos" class="text-sm text-gray-400 italic"></p>
             <span id="modal-level" class="text-xs font-semibold px-2 py-1 rounded-full"></span>
@@ -160,7 +160,46 @@ const wordsWithProgress = db.prepare(`
     </div>
 </div>
 
-<script define:vars={{LEVEL_LABELS, LEVEL_COLORS}}>
+<!-- Add-to-list modal -->
+<div id="list-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 relative">
+        <button
+                onclick="closeListModal()"
+                class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl leading-none"
+        >&times;</button>
+
+        <h3 class="text-lg font-bold text-gray-900 mb-1">Add to a list</h3>
+        <p id="list-modal-word" class="text-sm text-indigo-600 font-medium mb-5"></p>
+
+        <!-- Existing lists -->
+        <div id="list-modal-lists" class="space-y-2 mb-4"></div>
+        <p id="list-modal-empty" class="hidden text-sm text-gray-400 mb-4">No lists yet — create one below.</p>
+
+        <!-- New list -->
+        <div class="border-t border-gray-100 pt-4">
+            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">New list</p>
+            <div class="flex gap-2">
+                <input
+                        id="new-list-input"
+                        type="text"
+                        maxlength="64"
+                        placeholder="List name…"
+                        class="flex-1 px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                />
+                <button
+                        onclick="createAndAdd()"
+                        id="create-add-btn"
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-xl text-sm transition-colors whitespace-nowrap"
+                >
+                    Create &amp; Add
+                </button>
+            </div>
+            <p id="new-list-error" class="hidden text-xs text-red-500 mt-1.5"></p>
+        </div>
+    </div>
+</div>
+
+<script define:vars={{LEVEL_LABELS, LEVEL_COLORS, userLists}}>
     // ── Search & filter ────────────────────────────────────────────────────
     const searchInput = document.getElementById('search-input');
     const levelFilter = document.getElementById('level-filter');
@@ -210,14 +249,15 @@ const wordsWithProgress = db.prepare(`
         toastTimer = setTimeout(() => toast.classList.add('hidden'), 2500);
     }
 
-    // ── Queue button in table rows ─────────────────────────────────────────
+    // ── Row click delegation ───────────────────────────────────────────────
     tbody.addEventListener('click', async (e) => {
-        const btn = e.target.closest('.queue-btn');
-        if (btn) {
+        // Queue button
+        const queueBtn = e.target.closest('.queue-btn');
+        if (queueBtn) {
             e.stopPropagation();
-            const wordId = parseInt(btn.dataset.wordId, 10);
-            btn.disabled = true;
-            btn.textContent = '…';
+            const wordId = parseInt(queueBtn.dataset.wordId, 10);
+            queueBtn.disabled = true;
+            queueBtn.textContent = '…';
 
             try {
                 const res = await fetch('/api/queue', {
@@ -226,25 +266,36 @@ const wordsWithProgress = db.prepare(`
                     body: JSON.stringify({wordId}),
                 });
                 if (res.ok) {
-                    btn.textContent = '✓ Queued';
-                    btn.classList.remove('bg-indigo-100', 'hover:bg-indigo-200', 'text-indigo-700');
-                    btn.classList.add('bg-green-100', 'text-green-700', 'cursor-default');
-                    btn.dataset.inQueue = 'true';
+                    queueBtn.textContent = '✓ Queued';
+                    queueBtn.classList.remove('bg-indigo-100', 'hover:bg-indigo-200', 'text-indigo-700');
+                    queueBtn.classList.add('bg-green-100', 'text-green-700', 'cursor-default');
+                    queueBtn.dataset.inQueue = 'true';
                     showToast('Added to today\'s study queue!');
                 }
             } catch {
-                btn.disabled = false;
-                btn.textContent = '+ Queue';
+                queueBtn.disabled = false;
+                queueBtn.textContent = '+ Queue';
             }
             return;
         }
 
-        // Row click → open modal
+        // Add-to-list button
+        const addListBtn = e.target.closest('.add-list-btn');
+        if (addListBtn) {
+            e.stopPropagation();
+            openListModal(
+                parseInt(addListBtn.dataset.wordId, 10),
+                addListBtn.dataset.word
+            );
+            return;
+        }
+
+        // Row click → word detail modal
         const row = e.target.closest('tr.word-row');
         if (row) openModal(row);
     });
 
-    // ── Modal ──────────────────────────────────────────────────────────────
+    // ── Word detail modal ──────────────────────────────────────────────────
     const modal = document.getElementById('modal');
     let modalWordId = null;
 
@@ -253,7 +304,6 @@ const wordsWithProgress = db.prepare(`
         const def = row.dataset.definition ?? '';
         const pos = row.dataset.pos ?? '';
         const level = row.dataset.level ?? '';
-        const inQueue = row.dataset.inQueue !== 'false';
         modalWordId = parseInt(row.dataset.id, 10);
 
         document.getElementById('modal-word').textContent = word;
@@ -264,22 +314,18 @@ const wordsWithProgress = db.prepare(`
         levelEl.textContent = LEVEL_LABELS[level] ?? level;
         levelEl.className = `text-xs font-semibold px-2 py-1 rounded-full ${LEVEL_COLORS[level] ?? 'bg-gray-100 text-gray-600'}`;
 
-        const exEl = document.getElementById('modal-example');
-        exEl.classList.add('hidden');
+        document.getElementById('modal-example').classList.add('hidden');
 
         const queueBtn = document.getElementById('modal-queue-btn');
         const tableBtn = row.querySelector('.queue-btn');
         if (tableBtn && tableBtn.dataset.inQueue === 'true') {
             queueBtn.textContent = '✓ Already in Queue';
             queueBtn.disabled = true;
-            queueBtn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
-            queueBtn.classList.add('bg-green-100', 'text-green-700');
-            queueBtn.classList.remove('text-white');
+            queueBtn.className = 'mt-6 w-full bg-green-100 text-green-700 font-semibold py-2 rounded-xl';
         } else {
             queueBtn.textContent = '+ Add to Today\'s Study Queue';
             queueBtn.disabled = false;
-            queueBtn.classList.add('bg-indigo-600', 'hover:bg-indigo-700', 'text-white');
-            queueBtn.classList.remove('bg-green-100', 'text-green-700');
+            queueBtn.className = 'mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-xl transition-colors';
         }
         queueBtn.classList.remove('hidden');
 
@@ -300,10 +346,8 @@ const wordsWithProgress = db.prepare(`
             });
             if (res.ok) {
                 btn.textContent = '✓ Added to Queue';
-                btn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700', 'text-white');
-                btn.classList.add('bg-green-100', 'text-green-700');
+                btn.className = 'mt-6 w-full bg-green-100 text-green-700 font-semibold py-2 rounded-xl';
                 showToast('Added to today\'s study queue!');
-                // Also update the row button
                 const row = tbody.querySelector(`tr[data-id="${modalWordId}"]`);
                 if (row) {
                     const tableBtn = row.querySelector('.queue-btn');
@@ -327,15 +371,170 @@ const wordsWithProgress = db.prepare(`
         modal.classList.remove('flex');
     }
 
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) closeModal();
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+    // ── Add-to-list modal ──────────────────────────────────────────────────
+    const listModal = document.getElementById('list-modal');
+    // Local copy so newly created lists appear immediately without a page reload
+    let lists = userLists.map(l => ({...l}));
+    let listModalWordId = null;
+
+    function openListModal(wordId, wordName) {
+        listModalWordId = wordId;
+        document.getElementById('list-modal-word').textContent = `"${wordName}"`;
+        document.getElementById('new-list-input').value = '';
+        document.getElementById('new-list-error').classList.add('hidden');
+        renderListOptions();
+        listModal.classList.remove('hidden');
+        listModal.classList.add('flex');
+        document.getElementById('new-list-input').focus();
+    }
+
+    function renderListOptions() {
+        const container = document.getElementById('list-modal-lists');
+        const empty = document.getElementById('list-modal-empty');
+
+        if (lists.length === 0) {
+            container.innerHTML = '';
+            empty.classList.remove('hidden');
+            return;
+        }
+
+        empty.classList.add('hidden');
+        container.innerHTML = lists.map(l => `
+            <div class="flex items-center justify-between gap-3 py-2 px-3 rounded-xl hover:bg-gray-50">
+                <span class="text-sm font-medium text-gray-800 truncate">${escapeHtml(l.name)}</span>
+                <button
+                    class="add-to-existing-btn shrink-0 text-xs bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-semibold px-3 py-1 rounded-lg transition-colors"
+                    data-list-id="${l.id}"
+                    data-list-name="${escapeAttr(l.name)}"
+                >
+                    Add
+                </button>
+            </div>
+        `).join('');
+    }
+
+    document.getElementById('list-modal-lists').addEventListener('click', async (e) => {
+        const btn = e.target.closest('.add-to-existing-btn');
+        if (!btn || !listModalWordId) return;
+
+        const listId = btn.dataset.listId;
+        const listName = btn.dataset.listName;
+        btn.disabled = true;
+        btn.textContent = '…';
+
+        try {
+            const res = await fetch(`/api/lists/${listId}/words`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({wordId: listModalWordId}),
+            });
+            if (res.ok) {
+                btn.textContent = '✓ Added';
+                btn.className = 'shrink-0 text-xs bg-green-100 text-green-700 font-semibold px-3 py-1 rounded-lg cursor-default';
+                showToast(`Added to "${listName}"`);
+            } else {
+                btn.disabled = false;
+                btn.textContent = 'Add';
+            }
+        } catch {
+            btn.disabled = false;
+            btn.textContent = 'Add';
+        }
     });
+
+    async function createAndAdd() {
+        if (!listModalWordId) return;
+        const input = document.getElementById('new-list-input');
+        const errEl = document.getElementById('new-list-error');
+        const btn = document.getElementById('create-add-btn');
+        const name = input.value.trim();
+
+        errEl.classList.add('hidden');
+
+        if (!name) {
+            errEl.textContent = 'Please enter a list name.';
+            errEl.classList.remove('hidden');
+            input.focus();
+            return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = '…';
+
+        try {
+            // Create list
+            const createRes = await fetch('/api/lists', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name}),
+            });
+
+            if (!createRes.ok) {
+                const data = await createRes.json();
+                errEl.textContent = data.error ?? 'Failed to create list.';
+                errEl.classList.remove('hidden');
+                btn.disabled = false;
+                btn.textContent = 'Create & Add';
+                return;
+            }
+
+            const newList = await createRes.json();
+
+            // Add word to new list
+            await fetch(`/api/lists/${newList.id}/words`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({wordId: listModalWordId}),
+            });
+
+            // Update local list cache so it shows immediately
+            lists.push({id: newList.id, name: newList.name});
+            renderListOptions();
+            input.value = '';
+            showToast(`Created "${name}" and added word`);
+
+            // Mark the new list's button as already added
+            const newBtn = document.querySelector(`.add-to-existing-btn[data-list-id="${newList.id}"]`);
+            if (newBtn) {
+                newBtn.textContent = '✓ Added';
+                newBtn.disabled = true;
+                newBtn.className = 'shrink-0 text-xs bg-green-100 text-green-700 font-semibold px-3 py-1 rounded-lg cursor-default';
+            }
+        } catch {
+            errEl.textContent = 'Network error. Please try again.';
+            errEl.classList.remove('hidden');
+        }
+
+        btn.disabled = false;
+        btn.textContent = 'Create & Add';
+    }
+
+    function closeListModal() {
+        listModal.classList.add('hidden');
+        listModal.classList.remove('flex');
+    }
+
+    listModal.addEventListener('click', (e) => { if (e.target === listModal) closeListModal(); });
+
+    // ── Escape helpers ─────────────────────────────────────────────────────
+    function escapeHtml(str) {
+        return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function escapeAttr(str) {
+        return str.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    // ── Global keydown (close any open modal) ─────────────────────────────
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') closeModal();
+        if (e.key === 'Escape') { closeModal(); closeListModal(); }
     });
 
     window.closeModal = closeModal;
+    window.closeListModal = closeListModal;
     window.queueFromModal = queueFromModal;
+    window.createAndAdd = createAndAdd;
 
     // ── Column sorting ─────────────────────────────────────────────────────
     const SVG_NEUTRAL = '<i class="fa-solid fa-sort"></i>';
